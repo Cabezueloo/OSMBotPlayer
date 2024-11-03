@@ -1,6 +1,5 @@
 '''Control of the account using Selenium and threading'''
 
-
 import threading
 import time
 import pickle
@@ -13,6 +12,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from Player import Player
 import re
 from SeleniumDriver import SeleniumDriver
+from termcolor import colored 
+
+#RED Threard 1
+#GREEN Threard 2
+#BLUE Threard 3
 
 
 def thread_getCoinsWithVideos():
@@ -36,7 +40,7 @@ def thread_getCoinsWithVideos():
 
             # Hacer clic en el elemento para reproducir el video
             play_button.click()
-            print("Click hecho en el elemento que contiene el video.")
+            print(colored(f"{threading.current_thread().name}-> Click hecho en el elemento que contiene el video.","red"))
 
             # Esperar hasta que el video haya terminado
             while True:
@@ -53,10 +57,10 @@ def thread_getCoinsWithVideos():
 
                     # Comprobar el estado del div
                     if len(outer_html) == 24 or video_ad.value_of_css_property('display') == 'none':
-                        print("El video ha terminado o no ha cargado")
+                        print(colored(f"{threading.current_thread().name}->  El video ha terminado o no ha cargado","red"))
                         break
                 except Exception:
-                    print("No se pudo verificar el estado del video, asumiendo que ha terminado.")
+                    print(colored(f"{threading.current_thread().name}-> No se pudo verificar el estado del video, asumiendo que ha terminado.","red"))
                     break
 
 
@@ -65,10 +69,8 @@ def thread_getCoinsWithVideos():
                 text = driver.find_element(By.XPATH, "//p[@data-bind='html: content']")
                 timeToSleep = getTimeToSleep(text,driver)
 
-                print(f"Esperar tiempo de {timeToSleep/60} minutos")
+                print(colored(f"{threading.current_thread().name}-> Poniendo en espera {timeToSleep//60} minutos","red"))
             
-                
-                
                 time.sleep(timeToSleep)
                 driver.refresh()
 
@@ -77,7 +79,7 @@ def thread_getCoinsWithVideos():
 
             
         except Exception as e:
-            print(f"Error{e}")
+            print(colored(f"{threading.current_thread().name}-> Error{e}","red"))
             break
 
 def thread_knowBestBuy():
@@ -95,7 +97,7 @@ def thread_knowBestBuy():
             'span[data-bind="currency: $parent.shouldShowSavings() ? $parent.savings() : animatedProgress(), roundCurrency: RoundCurrency.Downwards, fractionDigitsK: 1, fractionDigits: 1"]')
         dinero = int(float(span_element.get_attribute("innerHTML").replace("M", "")) * 1000000)
         
-        print(f'Dinero que tengo es de:{dinero} ')
+        print(colored(f'{threading.current_thread().name}-> Dinero que tengo es de:{dinero} ',"green"))
 
         if dinero>10000000:
             # Encontrar la tabla por su clase
@@ -128,7 +130,7 @@ def thread_knowBestBuy():
                     # Extraer datos de cada celda dentro de la fila
                     cells = row.find_elements(By.TAG_NAME, 'td')
                     row.click()
-                    player_profile_div = WebDriverWait(driver, 0.5).until(
+                    player_profile_div = WebDriverWait(driver, 1).until(
                         EC.presence_of_element_located((By.CLASS_NAME, "player-profile-value"))
                     )
 
@@ -170,49 +172,62 @@ def thread_knowBestBuy():
 
             # Ordenar primero por 'inflated' en orden ascendente y luego por 'avrMedia' en orden descendente
             listaJugadores.sort(key=lambda x: (x.inflated, -x.avrMedia))
-            for x in listaJugadores:
-                print(x)
+        #    for x in listaJugadores:
+         #       print(colored(x,"green"))
             
             if len(listaJugadores) >=1:
-                print(f'El jugador a comprar sería: {listaJugadores[0]}')
+                print(colored(f'{threading.current_thread().name}-> Hay jugadores para comprar',"green"))
             
                 botones = checkIfCanSell()
 
                 if len(botones) != 0:
+                    print(colored(f'{threading.current_thread().name}-> Hay {len(botones)} huecos para poner jugadores a la venta',"green"))
+
+                    jugadoresParaComprar = []
+
+                    #Checkear cuantos compramos.
+                    for x in range(len(botones)):
+                        if dinero>= listaJugadores[x].priceToBuy:
+                            dinero = dinero - listaJugadores[x].priceToBuy
+                            jugadoresParaComprar = listaJugadores[x].name
+                        else:
+                            break #Si no llega el dinero, no hace falta comprobar todos, sabemos que no llegara
+                                   
 
 
-                    #Compramos al jugador 
-                    nombreJugador = listaJugadores[0].name
-                    #Hacer click y comprar
-                    span_element = driver.find_element(By.XPATH, f"//td[.//span[text()='{nombreJugador}']]")
+                    #Compramos al jugador/s
 
-                    span_element.click()
+                    for jugadorNombre in jugadoresParaComprar:
 
+                        #Hacer click y comprar
+                        span_element = driver.find_element(By.XPATH, f"//td[.//span[text()='{jugadorNombre}']]")
 
-                    btnToShop = WebDriverWait(driver,5).until(
-                        EC.element_to_be_clickable((By.XPATH, "//div[@id='modal-dialog-buyforeignplayer']//button[contains(@class, 'btn-new') and contains(@class, 'btn-success') and contains(@class, 'btn-wide')]"))
-
-                    )
-
-                    # Haz clic en el botón encontrado
-                    btnToShop.click()
-                    print("Botón encontrado y clic realizado. Compra realizada")
+                        span_element.click()
 
 
-                    selenium_driver.refresh_page()
+                        btnToShop = WebDriverWait(driver,5).until(
+                            EC.element_to_be_clickable((By.XPATH, "//div[@id='modal-dialog-buyforeignplayer']//button[contains(@class, 'btn-new') and contains(@class, 'btn-success') and contains(@class, 'btn-wide')]"))
+
+                        )
+
+                        # Haz clic en el botón de comprar
+                        btnToShop.click()
+                        print(colored(f"{threading.current_thread().name}-> Botón encontrado y clic realizado. Compra realizada","green"))
+                        time.sleep(1)
+
+                        #Refrescamos la pagina en cada compra(cada click)
+                        selenium_driver.refresh_page()
                     
-                    #Lo ponemos a la venta
-                    threarThreeSellPlayer = threading.Thread(target=thread_sellPlayer,args=(listaJugadores[0],))
-                    # Iniciar el hilo
+                    #Los ponemos a la venta
+                    threarThreeSellPlayer = threading.Thread(target=thread_sellPlayer,args=(jugadoresParaComprar,),name="Hilo 3")
+                            # Iniciar el hilo
                     threarThreeSellPlayer.start()
                     # (Opcional) Esperar a que el hilo termine
                     threarThreeSellPlayer.join()
         
-        print("Poniendo en espera 30 minutos")
+        print(colored(f"{threading.current_thread().name}-> Poniendo en espera 30 minutos","green"))
         time.sleep(1800) # 30 minutos
         selenium_driver.refresh_page()
-
-
 
 
 
@@ -230,7 +245,7 @@ def checkIfCanSell():
     return botones
 
 
-def thread_sellPlayer(jugadorParaVender):
+def thread_sellPlayer(jugadoresParaVender):
     selenium_driver  = SeleniumDriver()
     selenium_driver.load_url("https://en.onlinesoccermanager.com/Transferlist#sell-players")
     selenium_driver.load_cookies()
@@ -239,13 +254,16 @@ def thread_sellPlayer(jugadorParaVender):
 
     botones = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new') and contains(@class, 'btn-wide') and contains(@data-bind, 'showSelectSellPlayerModal')]")
 
-    for boton in botones:
-        boton.click()
+
+
+    for indice, jugadorAVender in enumerate(jugadoresParaVender):
+        
+        botones[indice].click()
         time.sleep(3)
-        span_element = driver.find_element(By.XPATH, f"//td[.//span[text()='{jugadorParaVender}']]")
+        span_element = driver.find_element(By.XPATH, f"//td[.//span[text()='{jugadorAVender}']]")
         span_element.click()
 
-        #Drag and drop
+        #Drag and drop para poner el precio maximo
         element_to_drag = WebDriverWait(driver, 4).until(
         EC.element_to_be_clickable((By.CLASS_NAME, "slider-handle.min-slider-handle.round"))
         )
@@ -260,29 +278,23 @@ def thread_sellPlayer(jugadorParaVender):
         a_element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'row player-profile-details player-profile-button')]//a[contains(@class, 'btn-new btn-primary btn-wide')]")))
         a_element.click()
 
-        time.sleep(10)
+        print(colored(f'{threading.current_thread().name}-> El jugador, {jugadorAVender} se ha puesto en venta',"blue"))
+        selenium_driver.refresh_page() #Para evitar errores, refrescamos la pagina
+
 
 
 
 
 
 # Crear los hilos
-threarOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos)
-threarTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy)
+threarOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos,name="Hilo 1")
+threarTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy, name="Hilo 2")
 
 
 
 # Iniciar los hilos
 threarOneControlOfCoinsVideos.start()
 threarTwoControlOfTransferList.start()
-
-
-
-
-
-
-
-
 
 #Funciones
 def getTimeToSleep(text,driver):
@@ -295,10 +307,10 @@ def getTimeToSleep(text,driver):
 
     
     textoCompleto = text.get_attribute("innerHTML")
-    print(textoCompleto)
+    print(colored(f'{threading.current_thread().name}-> {textoCompleto}',"red"))
     numeroEspera : int = 0
 
-    if ("few seconds" or "minuts") in textoCompleto :
+    if ("few seconds" or "minute") in textoCompleto :
         numeroEspera = 120 #2 minutos
     elif "an hour" in textoCompleto:
         numeroEspera = 3600 #1 hora
@@ -321,7 +333,7 @@ def getTimeToSleep(text,driver):
 
     # Hacer clic en el botón de cierre
     cls_button.click()
-    print("Ventana de información de tiempo de espera cerrada")
+    print(colored(f"{threading.current_thread().name}-> Ventana de información de tiempo de espera cerrada","red"))
     
     return numeroEspera
 

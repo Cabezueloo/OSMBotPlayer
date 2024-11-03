@@ -59,7 +59,7 @@ class SeleniumDriver:
         
         #Check if a pop-up show
         try:
-            span_element = WebDriverWait(self.driver, 5).until(
+            span_element = WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.XPATH, "//div[@id='modal-dialog-centerpopup']//button[@class='close']/span"))
             )
             
