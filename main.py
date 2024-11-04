@@ -33,6 +33,9 @@ def thread_getCoinsWithVideos():
 
     while True:
         try:
+
+            WebDriverWait(driver, 10).until(EC.invisibility_of_element((By.CLASS_NAME, "fc-dialog-overlay")))
+
             # Esperar hasta que el elemento que reproduce el video sea clickeable
             play_button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, ".row.row-h-xs-150.row-h-sm-24.business-club-method-container.method-container-small.center.watchvideo-method"))
@@ -49,8 +52,8 @@ def thread_getCoinsWithVideos():
             video_ad = driver.find_element(By.ID, "videoad")
             videoMostrado = False
 
-            # Comprobar el estado del div
-            while video_ad.value_of_css_property('display') == 'block':
+            ## Comprobar el estado del div
+            while video_ad.is_displayed():
                 print(colored(f"{threading.current_thread().name}->El video no ha terminado","red"))
                 videoMostrado = True
                 time.sleep(15)
@@ -122,19 +125,23 @@ def thread_knowBestBuy():
                 for row in rows:
                     # Extraer datos de cada celda dentro de la fila
                     cells = row.find_elements(By.TAG_NAME, 'td')
+                    #TODO Arreglar el click
+                    
                     row.click()
-                    player_profile_div = WebDriverWait(driver, 1).until(
-                        EC.presence_of_element_located((By.CLASS_NAME, "player-profile-value"))
-                    )
+                    
+                   # Selecciona el segundo span dentro del div con clase player-profile-value
+                    
+                    divPadre = driver.find_element(By.XPATH, "//div[@id='genericModalContainer']//div[@id='modal-dialog-buydomesticplayer' or @id='modal-dialog-buyforeignplayer' or @id='modal-dialog-canceltransferplayer']")
 
-                    span = player_profile_div.find_elements(By.TAG_NAME, "span")[1]
 
-                    price :str = span.get_attribute("innerHTML")
-
-                    if price.__contains__("M"):
-                        realPrice : int = int(float(price.replace("M", ""))*1000000)
-                    else:
-                        realPrice : int = int(float(price.replace("K", ""))*100000)
+                    if divPadre.get_attribute("id") != "modal-dialog-canceltransferplayer":
+                        span_element = divPadre.find_element(By.XPATH, ".//div[@class='player-inner-border']//div[@class='player-profile-player']//div[@class='player-profile-value']/span[2]")
+                        price :str = span_element.get_attribute("innerHTML")
+                        
+                        if price.__contains__("M"):
+                            realPrice : int = int(float(price.replace("M", ""))*1000000)
+                        else:
+                            realPrice : int = int(float(price.replace("K", ""))*100000)
 
                     # Cerrar ficha
                     container = WebDriverWait(driver,1).until(
@@ -165,8 +172,8 @@ def thread_knowBestBuy():
 
             # Ordenar primero por 'inflated' en orden ascendente y luego por 'avrMedia' en orden descendente
             listaJugadores.sort(key=lambda x: (x.inflated, -x.avrMedia))
-        #    for x in listaJugadores:
-         #       print(colored(x,"green"))
+            #for x in listaJugadores:
+                #print(colored(x,"green"))
             
             if len(listaJugadores) >=1:
                 print(colored(f'{threading.current_thread().name}-> Hay jugadores para comprar',"green"))
@@ -182,7 +189,7 @@ def thread_knowBestBuy():
                     for x in range(len(botones)):
                         if dinero>= listaJugadores[x].priceToBuy:
                             dinero = dinero - listaJugadores[x].priceToBuy
-                            jugadoresParaComprar = listaJugadores[x].name
+                            jugadoresParaComprar.append(listaJugadores[x].name)
                         else:
                             break #Si no llega el dinero, no hace falta comprobar todos, sabemos que no llegara
                                    
@@ -205,7 +212,7 @@ def thread_knowBestBuy():
 
                         # Haz clic en el botón de comprar
                         btnToShop.click()
-                        print(colored(f"{threading.current_thread().name}-> Botón encontrado y clic realizado. Compra realizada","green"))
+                        print(colored(f"{threading.current_thread().name}-> Botón encontrado y clic realizado. Compra realizada del jugador {jugadorNombre}","green"))
                         time.sleep(1)
 
                         #Refrescamos la pagina en cada compra(cada click)
@@ -235,6 +242,8 @@ def checkIfCanSell():
     driver = selenium_driver.driver
    
     botones = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new') and contains(@class, 'btn-wide') and contains(@data-bind, 'showSelectSellPlayerModal')]")
+    selenium_driver.close()
+    time.sleep(1)
     return botones
 
 
@@ -245,6 +254,9 @@ def thread_sellPlayer(jugadoresParaVender):
     selenium_driver.refresh_page()
     driver = selenium_driver.driver
 
+    # Crea una instancia de ActionChains
+    selenium_driver.actions()
+    
     botones = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new') and contains(@class, 'btn-wide') and contains(@data-bind, 'showSelectSellPlayerModal')]")
 
 
@@ -262,9 +274,7 @@ def thread_sellPlayer(jugadoresParaVender):
         )
         
         time.sleep(1)
-        # Crea una instancia de ActionChains
-        selenium_driver.actions()
-        time.sleep(1)
+        
         selenium_driver.actions.click_and_hold(element_to_drag).move_by_offset(200, 0).release().perform()
 
         #Confirmar poner en la venta
