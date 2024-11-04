@@ -42,42 +42,35 @@ def thread_getCoinsWithVideos():
             play_button.click()
             print(colored(f"{threading.current_thread().name}-> Click hecho en el elemento que contiene el video.","red"))
 
-            # Esperar hasta que el video haya terminado
-            while True:
+            # Esperar un corto período de tiempo y verificar el estado del video
+            time.sleep(5)  # Ajusta este tiempo según la duración de tu espera
+            
+            # Guardamos el div del video
+            video_ad = driver.find_element(By.ID, "videoad")
+            videoMostrado = False
+
+            # Comprobar el estado del div
+            while video_ad.value_of_css_property('display') == 'block':
+                print(colored(f"{threading.current_thread().name}->El video no ha terminado","red"))
+                videoMostrado = True
+                time.sleep(15)
+              
+
+            #Comprobamos si nos ha dado mensaje de tiempo de espera para ver mas videos
+            if not videoMostrado:
+                print(colored(f"{threading.current_thread().name}->Video no mostrado, mensaje de espera mostrado, coger tiempo a esperar","red"))
                 try:
-                    # Esperar un corto período de tiempo y verificar el estado del video
-                    time.sleep(1)  # Ajusta este tiempo según la duración de tu espera
-                    # Verificar si el div de video ha cambiado a inactivo
-                    video_ad = driver.find_element(By.ID, "videoad")
+                    text = driver.find_element(By.XPATH, "//p[@data-bind='html: content']")
+                    timeToSleep = getTimeToSleep(text,driver)
 
-                    outer_html = video_ad.get_attribute("outerHTML")
-                    
+                    print(colored(f"{threading.current_thread().name}-> Poniendo en espera {timeToSleep//60} minutos","red"))
+                
+                    time.sleep(timeToSleep)
+                    driver.refresh()
 
-
-
-                    # Comprobar el estado del div
-                    if len(outer_html) == 24 or video_ad.value_of_css_property('display') == 'none':
-                        print(colored(f"{threading.current_thread().name}->  El video ha terminado o no ha cargado","red"))
-                        break
                 except Exception:
-                    print(colored(f"{threading.current_thread().name}-> No se pudo verificar el estado del video, asumiendo que ha terminado.","red"))
-                    break
+                    pass
 
-
-
-            try:
-                text = driver.find_element(By.XPATH, "//p[@data-bind='html: content']")
-                timeToSleep = getTimeToSleep(text,driver)
-
-                print(colored(f"{threading.current_thread().name}-> Poniendo en espera {timeToSleep//60} minutos","red"))
-            
-                time.sleep(timeToSleep)
-                driver.refresh()
-
-            except Exception:
-                pass
-
-            
         except Exception as e:
             print(colored(f"{threading.current_thread().name}-> Error{e}","red"))
             break
@@ -282,19 +275,14 @@ def thread_sellPlayer(jugadoresParaVender):
         selenium_driver.refresh_page() #Para evitar errores, refrescamos la pagina
 
 
+if __name__ == "__main__":
+    # Crear los hilos
+    threarOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos,name="Hilo 1")
+    threarTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy, name="Hilo 2")
 
-
-
-
-# Crear los hilos
-threarOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos,name="Hilo 1")
-threarTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy, name="Hilo 2")
-
-
-
-# Iniciar los hilos
-threarOneControlOfCoinsVideos.start()
-threarTwoControlOfTransferList.start()
+    # Iniciar los hilos
+    threarOneControlOfCoinsVideos.start()
+    threarTwoControlOfTransferList.start()
 
 #Funciones
 def getTimeToSleep(text,driver):
@@ -304,8 +292,6 @@ def getTimeToSleep(text,driver):
     '''
     #elemntContainerText = driver.find_element(By.ID, "modal-dialog-alert")
 
-
-    
     textoCompleto = text.get_attribute("innerHTML")
     print(colored(f'{threading.current_thread().name}-> {textoCompleto}',"red"))
     numeroEspera : int = 0
