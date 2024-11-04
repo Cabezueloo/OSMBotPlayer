@@ -16,11 +16,14 @@ class SeleniumDriver:
         # Configuración de opciones de Chrome
         self.opts = Options()
         self.opts.add_argument("--start-maximized")
+        self.opts.add_argument('--log-level=1') # Para que no salga "Created TensorFlow"
+
         #self.opts.add_argument("--headless")  # Ejecutar en modo headless (Segundo plano)
         self.opts.add_argument("--mute-audio")  # Silenciar el audio
-        self.opts.add_experimental_option("excludeSwitches", ['enable-automation'])
+        self.opts.add_experimental_option("excludeSwitches", ['enable-logging']) 
         self.opts.add_experimental_option('useAutomationExtension', False)
         
+
         # Crear un servicio para el chromedriver
         self.service = Service('chromedriver.exe')
         
