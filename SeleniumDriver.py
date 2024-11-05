@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import random
 
 
 class SeleniumDriver:
@@ -69,8 +70,39 @@ class SeleniumDriver:
             span_element.click()
         except Exception:
             pass
+        
+        try:
+            #Check if a modal-dialog-skillratingupdate
+            modal = self.driver.find_element(By.ID, "modal-dialog-skillratingupdate")
+            
+            # Verifica si el modal es visible
+            if modal.is_displayed():
+                # Obtiene la posición y dimensiones del modal
+                modal_location = modal.location
+                modal_size = modal.size
+                modal_left = modal_location['x']
+                modal_top = modal_location['y']
+                modal_right = modal_left + modal_size['width']
+                modal_bottom = modal_top + modal_size['height']
+                
+                # Genera una posición aleatoria fuera del modal
+                window_width = self.driver.execute_script("return window.innerWidth")
+                window_height = self.driver.execute_script("return window.innerHeight")
 
+                # Asegurarse de que el clic sea fuera de los límites del modal
+                while True:
+                    random_x = self.driver.randint(0, window_width)
+                    random_y = random.randint(0, window_height)
+                    
+                    if not (modal_left <= random_x <= modal_right and modal_top <= random_y <= modal_bottom):
+                        break
 
+                # Simula un clic en la posición aleatoria fuera del modal
+                
+                self.actions.move_by_offset(random_x, random_y).click().perform()
+                print("Modal cerrado con clic en posición aleatoria fuera del modal:", (random_x, random_y))
+        except Exception:
+            print(f"modal dialog skillratingupdate no encontrado")
 
     def close(self):
         self.driver.quit()
