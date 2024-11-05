@@ -102,7 +102,8 @@ class SeleniumDriver:
                 self.actions.move_by_offset(random_x, random_y).click().perform()
                 print("Modal cerrado con clic en posición aleatoria fuera del modal:", (random_x, random_y))
         except Exception:
-            print(f"modal dialog skillratingupdate no encontrado")
+            pass
+            #print(f"modal dialog skillratingupdate no encontrado")
 
     def close(self):
         self.driver.quit()
