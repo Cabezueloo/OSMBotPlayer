@@ -14,10 +14,12 @@ import re
 from SeleniumDriver import SeleniumDriver
 from termcolor import colored 
 from datetime import datetime
+import random
 
 #RED Threard 1
 #GREEN Threard 2
 #BLUE Threard 3
+#YELLOW Threard 3
 
 
 def thread_getCoinsWithVideos():
@@ -65,7 +67,7 @@ def thread_getCoinsWithVideos():
                 print(colored(f"{threading.current_thread().name}->Video no mostrado, mensaje de espera mostrado, coger tiempo a esperar","red"))
                 try:
                     text = driver.find_element(By.XPATH, "//p[@data-bind='html: content']")
-                    timeToSleep = getTimeToSleep(text,driver,selenium_driver_get_coins.actions)
+                    timeToSleep = getTimeToSleep(text,driver,selenium_driver_get_coins.actions,color = "red")
 
                     print(colored(f"{threading.current_thread().name}-> Poniendo en espera {timeToSleep//60} minutos, hora actual es {datetime.now().strftime('%H:%M:%S')}","red"))
                 
@@ -223,12 +225,12 @@ def thread_knowBestBuy():
                 
                 if len(jugadoresParaComprar)>=1:
                     #Los ponemos a la venta
-                    threarThreeSellPlayer = threading.Thread(target=thread_sellPlayer,args=(jugadoresParaComprar,),name="Hilo 3")
+                    threadThreeSellPlayer = threading.Thread(target=thread_sellPlayer,args=(jugadoresParaComprar,),name="Hilo 3")
                     
                     # Iniciar el hilo
-                    threarThreeSellPlayer.start()
+                    threadThreeSellPlayer.start()
                     #Esperar a que el hilo termine
-                    threarThreeSellPlayer.join()
+                    threadThreeSellPlayer.join()
         
         if dinero<10000000 or botonesDisponibles==0:
             info = "Dinero insuficiente" if dinero<10000000 else "No hay huecos de venta disponible 4/4 ocupado"
@@ -291,33 +293,115 @@ def thread_sellPlayer(jugadoresParaVender):
         a_element.click()
 
         print(colored(f'{threading.current_thread().name}-> El jugador, {jugadorAVender} se ha puesto en venta',"blue"))
+        time.sleep(3)
         #selenium_driver_sellPlayer.refresh_page() #Para evitar errores, refrescamos la pagina
+
+
+def thread_trainingPlayers():
+    selenium_driver_training_players  = SeleniumDriver()
+    selenium_driver_training_players.load_url("https://en.onlinesoccermanager.com/Training")
+    selenium_driver_training_players.load_cookies()
+    selenium_driver_training_players.refresh_page()
+
+    driver = selenium_driver_training_players.driver
+
+    while True:
+
+        try:
+            btn_add_player_to_train = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new btn-primary btn-orange')]//span[contains(text(), 'Start')]")
+
+            for button in btn_add_player_to_train:
+                button.click()
+                time.sleep(1)
+                listPlayerToClick = driver.find_elements(By.XPATH, "//table[contains(@id, 'squad-table')]//tr")
+                posicion = random.randint(0, 3)
+                posicion = 0
+                listPlayerToClick[posicion+1].click()
+
+                try:
+                    btn_ok_action = driver.find_element(By.XPATH, "//div[@id='modal-dialog-confirm']//button[@data-bind='click: okAction']")
+                    btn_ok_action.click()
+                except Exception:
+                    print("El model de confirmar no esta presente.")
+
+        except Exception:
+            pass
+
+        try:
+            
+            btn_watchAd = driver.find_elements(By.XPATH, "//div[contains(@class, 'training-panel-footer center')]//button[contains(@class, 'btn-new center')]")
+
+        
+            for boton in btn_watchAd:
+                boton.click()
+
+                print(colored(f"{threading.current_thread().name}-> Click hecho en el elemento que contiene el video.","yellow"))
+
+                # Esperar un corto período de tiempo y verificar el estado del video
+                time.sleep(5)  # Ajusta este tiempo según la duración de tu espera
+                
+                # Guardamos el div del video
+                video_ad = driver.find_element(By.ID, "videoad")
+                videoMostrado = False
+
+                ## Comprobar el estado del div
+                while video_ad.is_displayed():
+                    print(colored(f"{threading.current_thread().name}->El video no ha terminado","yellow"))
+                    videoMostrado = True
+                    time.sleep(15)
+
+                    #Comprobamos si nos ha dado mensaje de tiempo de espera para ver mas videos
+                if not videoMostrado:
+                    print(colored(f"{threading.current_thread().name}->Video no mostrado, mensaje de espera mostrado, coger tiempo a esperar","yellow"))
+                    try:
+                        text = driver.find_element(By.XPATH, "//p[@data-bind='html: content']")
+                        timeToSleep = getTimeToSleep(text,driver,selenium_driver_training_players.actions,color="yellow")
+
+                        print(colored(f"{threading.current_thread().name}-> Poniendo en espera {timeToSleep//60} minutos, hora actual es {datetime.now().strftime('%H:%M:%S')}","yellow"))
+                    
+                        time.sleep(timeToSleep)
+                    except Exception:
+                        break
+
+
+        except Exception:
+            pass
+
+        
+
 
 
 if __name__ == "__main__":
     # Crear los hilos
-    threarOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos,name="Hilo 1")
-    threarTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy, name="Hilo 2")
+    threadOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos,name="Hilo 1")
+    threadTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy, name="Hilo 2")
+    #HILO PONE EN VENTA A LOS JUGADORES COMPRADOS DEL HILO DOS, SE CREA DESDE EL HILO 2
+
+    threadFourControlOfTrainingPlayers = threading.Thread(target=thread_trainingPlayers, name="Hilo 4")
+
 
     # Iniciar los hilos
-    threarOneControlOfCoinsVideos.start()
-    threarTwoControlOfTransferList.start()
+    threadOneControlOfCoinsVideos.start()
+    threadTwoControlOfTransferList.start()
+    threadFourControlOfTrainingPlayers.start()
 
 
 #Funciones
-def getTimeToSleep(text, driver,actions):
+def getTimeToSleep(text, driver,actions,color):
     '''
     En caso de que ya no se pueda reproducir más videos,
     miramos el tiempo que nos indica, para poder hacer un time.sleep adecuado
     '''
     textoCompleto = text.get_attribute("innerHTML")
-    print(colored(f'{threading.current_thread().name}-> {textoCompleto}', "red"))
+    print(colored(f'{threading.current_thread().name}-> {textoCompleto}', color))
     numeroEspera: int = 0
 
     if ("few seconds" or "minute") in textoCompleto:
         numeroEspera = 120  # 2 minutos
     elif "an hour" in textoCompleto:
         numeroEspera = 300  # Ponemos 5 minutos para que vuelva a pulsar el boton y coja 45 minutos, ya que no es una hora
+    elif "hours" in textoCompleto:
+        numeroEspera = 3600 # Ponemos una hora
     else:
         numeroEspera = int((re.findall(r'[\d]+', textoCompleto))[0])
         numeroEspera *= 60
@@ -327,11 +411,11 @@ def getTimeToSleep(text, driver,actions):
 
         close_button = driver.find_element(By.XPATH, "//div[contains(@id, 'modal-dialog-alert')]//button[contains(@class, 'close')]")
 
-        actions.move_to_element(close_button).perform()
+        #actions.move_to_element(close_button).perform()
         close_button.click()
-        print(colored(f"{threading.current_thread().name}-> Ventana de información de tiempo a esperar, cerrada", "red"))
+        print(colored(f"{threading.current_thread().name}-> Ventana de información de tiempo a esperar, cerrada", color))
     except Exception as e:
-        print(colored(f"{threading.current_thread().name}-> No se encontró el elemento close button de la ventana de informacion: {e}", "red"))
+        print(colored(f"{threading.current_thread().name}-> No se encontró el elemento close button de la ventana de informacion: {e}", color))
 
     return numeroEspera
 
