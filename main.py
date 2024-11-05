@@ -15,7 +15,7 @@ from SeleniumDriver import SeleniumDriver
 from termcolor import colored 
 from datetime import datetime
 import random
-import math
+from RutuasAlHTML import *
 
 #RED Threard 1
 #GREEN Threard 2
@@ -26,7 +26,7 @@ import math
 def thread_getCoinsWithVideos():
 
     '''Hilo encargado de ver videos siempre que se pueda para recopilar monedas'''
-    
+
     selenium_driver_get_coins  = SeleniumDriver()
     selenium_driver_get_coins.load_url("https://en.onlinesoccermanager.com/BusinessClub")
     selenium_driver_get_coins.load_cookies()
@@ -42,7 +42,7 @@ def thread_getCoinsWithVideos():
 
             # Esperar hasta que el elemento que reproduce el video sea clickeable
             play_button = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, ".row.row-h-xs-150.row-h-sm-24.business-club-method-container.method-container-small.center.watchvideo-method"))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, PLAY_BUTTON_VIDEOS_AD_COINS))
             )
 
             # Hacer clic en el elemento para reproducir el video
@@ -67,16 +67,18 @@ def thread_getCoinsWithVideos():
             if not videoMostrado:
                 print(colored(f"{threading.current_thread().name}->Video no mostrado al intentar ver videos para conseguir monedas, mensaje de espera mostrado , coger tiempo a esperar","red"))
                 try:
-                    text = driver.find_element(By.XPATH, "//p[@data-bind='html: content']")
-                    timeToSleep = getTimeToSleep(text,driver,selenium_driver_get_coins.actions,color = "red")
+                    text = driver.find_element(By.XPATH, CONTENIDO_MENSAJE_DE_ESPERA)
+                    timeToSleep = getTimeToSleep(text,driver,color = "red")
 
                     print(colored(f"{threading.current_thread().name}-> Poniendo en espera {timeToSleep//60} minutos el apartado de ver videos para monedas. Hora actual es {datetime.now().strftime('%H:%M:%S')}","red"))
                 
                     time.sleep(timeToSleep)
-                     
 
                 except Exception:
                     driver.refresh()
+            
+            
+                     
 
         except Exception as e:
             print(colored(f"{threading.current_thread().name}-> Error{e}","red"))
@@ -84,6 +86,7 @@ def thread_getCoinsWithVideos():
 
 
 def thread_knowBestBuy():
+
     selenium_driver_best_buy  = SeleniumDriver()
     selenium_driver_best_buy.load_url("https://en.onlinesoccermanager.com/Transferlist/")
     selenium_driver_best_buy.load_cookies()
@@ -104,7 +107,7 @@ def thread_knowBestBuy():
 
         if dinero>10000000 and botonesDisponibles!= 0:
             # Encontrar la tabla por su clase
-            table = driver.find_element(By.XPATH, '//table[contains(@class, "table table-sticky thSortable")]')
+            table = driver.find_element(By.XPATH, TABLA_JUGADORES_EN_VENTA)
 
             # Encontrar todos los tbody dentro de la tabla
 
@@ -141,11 +144,11 @@ def thread_knowBestBuy():
                     
                    # Selecciona el segundo span dentro del div con clase player-profile-value
                     
-                    divPadre = driver.find_element(By.XPATH, "//div[@id='genericModalContainer']//div[@id='modal-dialog-buydomesticplayer' or @id='modal-dialog-buyforeignplayer' or @id='modal-dialog-canceltransferplayer']")
+                    divPadre = driver.find_element(By.XPATH, FICHA_JUGADOR_AL_HACER_CLICK_EN_LA_TABLA)
 
 
                     if divPadre.get_attribute("id") != "modal-dialog-canceltransferplayer":
-                        span_element = divPadre.find_element(By.XPATH, ".//div[@class='player-inner-border']//div[@class='player-profile-player']//div[@class='player-profile-value']/span[2]")
+                        span_element = divPadre.find_element(By.XPATH, PRECIO_REAL_JUGADOR_DESDE_LA_FICHA_ABIERTA)
                         price :str = span_element.get_attribute("innerHTML")
                         
                         if price.__contains__("M"):
@@ -159,7 +162,7 @@ def thread_knowBestBuy():
                     )
 
                     close_button = WebDriverWait(container,4).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, "div[aria-label='Close'].close-large.animated.fadeInDown"))
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, BOTON_CERRAR_FICHA_JUGADOR_TABLA))
                     )
 
                     # Hacer clic en el botón de cierre
@@ -184,7 +187,7 @@ def thread_knowBestBuy():
             listaJugadores.sort(key=lambda x: (x.inflated, -x.avrMedia))
             for x in listaJugadores:
                 print(colored(x,"green"))
-            break
+            
 
             if len(listaJugadores) >=1:
                 print(colored(f'{threading.current_thread().name}->Jugadores disponibles para comprar en base al dinero actual',"green"))
@@ -220,7 +223,7 @@ def thread_knowBestBuy():
                     # Haz clic en el botón de comprar
                     btnToShop.click()
                     print(colored(f"{threading.current_thread().name}-> Botón encontrado y clic realizado. Compra realizada del jugador {jugadorNombre}","green"))
-                    time.sleep(1)
+                    time.sleep(3)
 
                     #Refrescamos la pagina en cada compra(cada click)
                     #selenium_driver_best_buy.refresh_page()
@@ -306,60 +309,7 @@ def thread_trainingPlayers():
 
         driver = selenium_driver_training_players.driver
         
-        #Check if a training is completed
-        try:
-            btn_complete = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new btn-success btn-show-result')]//span[contains(text(), 'Complete')]")
-
-            for button in btn_complete:
-                button.click()
-                time.sleep(2)
-            
-            time.sleep(15)
-                
-
-        except Exception:
-            pass
-
-
-        #Add a player to train
-        try:
-            btn_add_player_to_train = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new btn-primary btn-orange')]//span[contains(text(), 'Start')]")
-
-            #Para que no ponga a 
-            tiempoActual = datetime.now().time()
-            tiempoDelPartido = datetime.strptime('20::20::00','%H::%M::%S').time()
-            diferenciaHora = abs(tiempoDelPartido.hour - tiempoActual.hour)
-            diferenciaMinuto= abs(tiempoDelPartido.minute - tiempoActual.minute)
-
-            
-            print(colored(f"{threading.current_thread().name}->Tiempo hasta el partido {diferenciaHora} horas y {diferenciaMinuto} minutos ","yellow"))
-
-            if diferenciaHora >8:
-
-                for button in btn_add_player_to_train:
-                    button.click()
-                    time.sleep(1)
-                    listPlayerToClick = driver.find_elements(By.XPATH, "//table[contains(@id, 'squad-table')]//tr")
-                    posicion = random.randint(0, 3)
-                    posicion = 0
-                    listPlayerToClick[posicion+1].click()
-                    time.sleep(1)
-                    try:
-                        btn_ok_action = driver.find_element(By.XPATH, "//div[@id='modal-dialog-confirm']//div[@data-bind='click: okAction']")
-                        btn_ok_action.click()
-                        time.sleep(5)
-                    except Exception:
-                        print("El model de confirmar no esta presente.")
-            elif len(btn_add_player_to_train)==4:
-                print(colored(f"{threading.current_thread().name}->Pausado, ya que no hay entrenamientos haciendose actualmente, no se puede ver videos entonces","yellow"))
-                tiempoEspera = (diferenciaHora*3600)+(diferenciaMinuto*60)
-                time.sleep(tiempoEspera)
-            else:
-                print(colored(f"{threading.current_thread().name}->La diferencia del partido es menor que 8, entonces no va a añadir ningun jugador a entrenar","yellow"))
-
-                
-        except Exception:
-            pass
+        checkTrainingCompletedAndManageToPutAPlayerToTrain(driver=driver,comprobarTiempo=True)
 
         #Watch adds in training
         try:
@@ -386,18 +336,22 @@ def thread_trainingPlayers():
                     videoMostrado = True
                     time.sleep(15)
 
-                    #Comprobamos si nos ha dado mensaje de tiempo de espera para ver mas videos
+                
+                #Comprobamos si nos ha dado mensaje de tiempo de espera para ver mas videos
                 if not videoMostrado:
                     print(colored(f"{threading.current_thread().name}->Video no mostrado al pulsar el boton {index}, mensaje de espera mostrado, coger tiempo a esperar","yellow"))
                     try:
                         text = driver.find_element(By.XPATH, "//p[@data-bind='html: content']")
-                        timeToSleep = getTimeToSleep(text,driver,selenium_driver_training_players.actions,color="yellow")
+                        timeToSleep = getTimeToSleep(text,driver,color="yellow")
 
                         print(colored(f"{threading.current_thread().name}-> Poniendo en espera la parte de el entrenamiento de jugador por no poder ver mas videos {timeToSleep//60} minutos, hora actual es {datetime.now().strftime('%H:%M:%S')}","yellow"))
                     
                         time.sleep(timeToSleep)
                     except Exception:
                         break
+                #Volvemos ha comprobar si con el click ha sido conpletado el tiempo, pero al tiempo que falta se aplica un modificador de mas 3 horas de margen
+                else:
+                    checkTrainingCompletedAndManageToPutAPlayerToTrain(driver=driver,comprobarTiempo=False)
 
 
         except Exception:
@@ -408,6 +362,7 @@ def thread_trainingPlayers():
 
 
 if __name__ == "__main__":
+
     # Crear los hilos
     threadOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos,name="Hilo 1")
     threadTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy, name="Hilo 2")
@@ -422,10 +377,11 @@ if __name__ == "__main__":
     threadFourControlOfTrainingPlayers.start()
 
 
+    
 #Funciones
-def getTimeToSleep(text, driver,actions,color):
+def getTimeToSleep(text, driver,color):
     '''
-    En caso de que ya no se pueda reproducir más videos,
+    Funcion encarga de en  caso de que ya no se pueda reproducir más videos,
     miramos el tiempo que nos indica, para poder hacer un time.sleep adecuado
     '''
     textoCompleto = text.get_attribute("innerHTML")
@@ -455,3 +411,66 @@ def getTimeToSleep(text, driver,actions,color):
 
     return numeroEspera
 
+def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo):
+    
+    '''Funcion encargada de comprobar los jugadores que han acabado el entrenamiento
+    para pulsar el boton de ok.
+    También se encarga de gestiónar los entrenamientos donde no estan entrenando'''
+
+    #Check if a training is completed
+    try:
+        btn_complete = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new btn-success btn-show-result')]//span[contains(text(), 'Complete')]")
+
+        for button in btn_complete:
+            button.click()
+            time.sleep(2)
+        
+        time.sleep(15)
+            
+
+    except Exception:
+        pass
+
+
+    #Add a player to train
+    try:
+        btn_add_player_to_train = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new btn-primary btn-orange')]//span[contains(text(), 'Start')]")
+        
+        #Para que no ponga a entrenar a jugador si hay partido a menos de 8 horas
+        tiempoActual = datetime.now().time()
+        tiempoDelPartido = datetime.strptime('20::20::00','%H::%M::%S').time()
+        diferenciaHora = abs(tiempoDelPartido.hour - tiempoActual.hour)
+        diferenciaMinuto= tiempoActual.minute - tiempoDelPartido.minute
+
+        if not comprobarTiempo:
+            diferenciaHora = diferenciaHora+3
+        
+        print(colored(f"{threading.current_thread().name}->Tiempo hasta el partido {diferenciaHora} horas y {diferenciaMinuto} minutos ","yellow"))
+
+        #TODO  mejorar el codigo de diferencia 
+        if diferenciaHora >8 or (diferenciaHora==0 and diferenciaMinuto>=5):
+
+            for button in btn_add_player_to_train:
+                button.click()
+                time.sleep(1)
+                listPlayerToClick = driver.find_elements(By.XPATH, "//table[contains(@id, 'squad-table')]//tr")
+                posicion = random.randint(0, 3)
+                posicion = 0
+                listPlayerToClick[posicion+1].click()
+                time.sleep(1)
+                try:
+                    btn_ok_action = driver.find_element(By.XPATH, "//div[@id='modal-dialog-confirm']//div[@data-bind='click: okAction']")
+                    btn_ok_action.click()
+                    time.sleep(5)
+                except Exception:
+                    print("El model de confirmar no esta presente.")
+        elif len(btn_add_player_to_train)==4:
+            print(colored(f"{threading.current_thread().name}->Pausado, ya que no hay entrenamientos haciendose actualmente, no se puede ver videos entonces","yellow"))
+            tiempoEspera = (diferenciaHora*3600)+(diferenciaMinuto*60)
+            time.sleep(tiempoEspera)
+        else:
+            print(colored(f"{threading.current_thread().name}->La diferencia del partido es menor que 8, entonces no va a añadir ningun jugador a entrenar","yellow"))
+
+            
+    except Exception:
+        pass
