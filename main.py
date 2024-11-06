@@ -2,10 +2,6 @@
 
 import threading
 import time
-import pickle
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -304,7 +300,9 @@ def thread_trainingPlayers():
     selenium_driver_training_players  = SeleniumDriver()
     selenium_driver_training_players.load_url("https://en.onlinesoccermanager.com/Training")
     selenium_driver_training_players.load_cookies()
+
     while True:
+        
         selenium_driver_training_players.refresh_page()
 
         driver = selenium_driver_training_players.driver
@@ -315,7 +313,7 @@ def thread_trainingPlayers():
         try:
             print(colored(f"{threading.current_thread().name}->Entro para ver si puede hay para pulsar anuncio. hora -> {datetime.now().strftime('%H:%M:%S')}","yellow"))
 
-            btn_watchAd = driver.find_elements(By.XPATH, "//div[contains(@class, 'training-panel-footer center')]//button[contains(@class, 'btn-new center')]")
+            btn_watchAd = driver.find_elements(By.XPATH, BOTON_VER_ANUNCIO_JUGADORES_ENTRENANDO)
 
         
             for index, boton in enumerate(btn_watchAd):
@@ -341,7 +339,7 @@ def thread_trainingPlayers():
                 if not videoMostrado:
                     print(colored(f"{threading.current_thread().name}->Video no mostrado al pulsar el boton {index}, mensaje de espera mostrado, coger tiempo a esperar","yellow"))
                     try:
-                        text = driver.find_element(By.XPATH, "//p[@data-bind='html: content']")
+                        text = driver.find_element(By.XPATH, CONTENIDO_MENSAJE_DE_ESPERA)
                         timeToSleep = getTimeToSleep(text,driver,color="yellow")
 
                         print(colored(f"{threading.current_thread().name}-> Poniendo en espera la parte de el entrenamiento de jugador por no poder ver mas videos {timeToSleep//60} minutos, hora actual es {datetime.now().strftime('%H:%M:%S')}","yellow"))
@@ -419,22 +417,24 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo):
 
     #Check if a training is completed
     try:
-        btn_complete = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new btn-success btn-show-result')]//span[contains(text(), 'Complete')]")
+
+        btn_complete = driver.find_elements(By.XPATH, BOTON_COMPLETE_DE_LOS_ENTRENAMIENTOS)
 
         for button in btn_complete:
             button.click()
             time.sleep(2)
+            (colored(f"{threading.current_thread().name}->Boton de jugador completado pulsado ","yellow"))
         
         time.sleep(15)
             
 
     except Exception:
-        pass
+        (colored(f"{threading.current_thread().name}->No hay jugadors que marque que han terminado el entrenamiento(BOTON COMPLETE)","yellow"))
 
 
     #Add a player to train
     try:
-        btn_add_player_to_train = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new btn-primary btn-orange')]//span[contains(text(), 'Start')]")
+        btn_add_player_to_train = driver.find_elements(By.XPATH, BOTON_START_PONER_JUGADOR_A_ENTRENAR)
         
         #Para que no ponga a entrenar a jugador si hay partido a menos de 8 horas
         tiempoActual = datetime.now().time()
@@ -457,9 +457,11 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo):
                 posicion = random.randint(0, 3)
                 posicion = 0
                 listPlayerToClick[posicion+1].click()
+                print(colored(f"{threading.current_thread().name}->Jugador añadido a {diferenciaHora} horas y {diferenciaMinuto} minutos del partido","yellow"))
+
                 time.sleep(1)
                 try:
-                    btn_ok_action = driver.find_element(By.XPATH, "//div[@id='modal-dialog-confirm']//div[@data-bind='click: okAction']")
+                    btn_ok_action = driver.find_element(By.XPATH, BOTON_OK_MENSAJE_CONFIRMACION_PONER_JUGADOR_A_ENTRENAR)
                     btn_ok_action.click()
                     time.sleep(5)
                 except Exception:
@@ -474,3 +476,4 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo):
             
     except Exception:
         pass
+
