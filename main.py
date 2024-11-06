@@ -1,4 +1,4 @@
-'''Control of the account using Selenium and threading'''
+'''Control of the byu-sell, training and see videos to win coins to the game web OSM using Selenium and threading'''
 
 import threading
 import time
@@ -173,7 +173,7 @@ def thread_knowBestBuy():
                         deff = int(cells[6].text)
                         ovr = int(cells[7].text)
                         priceToBuy = int(float(cells[9].text.replace("M", "")) * 1000000)
-                        if priceToBuy<= dinero and not "Athletic Bilbao" in club :
+                        if priceToBuy<= dinero and not "Athletic Bilbao" in club and not pos == "GK" :
                             p = Player(name,pos,age,club,att,deff,ovr,priceToBuy,realPrice)
                             listaJugadores.append(p)
 
@@ -242,8 +242,6 @@ def thread_knowBestBuy():
         selenium_driver_best_buy.refresh_page()
 
 
-
-
 def checkIfCanSell(driver) -> int:
                     
     time.sleep(1)
@@ -253,8 +251,7 @@ def checkIfCanSell(driver) -> int:
     n = int(numero.group())
 
     return 4- n
-   
- 
+
 
 def thread_sellPlayer(jugadoresParaVender):
     selenium_driver_sellPlayer= SeleniumDriver()
@@ -355,8 +352,6 @@ def thread_trainingPlayers():
         except Exception:
             pass
 
-        
-
 
 
 if __name__ == "__main__":
@@ -377,7 +372,7 @@ if __name__ == "__main__":
 
     
 #Funciones
-def getTimeToSleep(text, driver,color):
+def getTimeToSleep(text, driver,color) -> int:
     '''
     Funcion encarga de en  caso de que ya no se pueda reproducir más videos,
     miramos el tiempo que nos indica, para poder hacer un time.sleep adecuado
@@ -409,7 +404,7 @@ def getTimeToSleep(text, driver,color):
 
     return numeroEspera
 
-def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo):
+def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo) -> None:
     
     '''Funcion encargada de comprobar los jugadores que han acabado el entrenamiento
     para pulsar el boton de ok.
@@ -448,14 +443,14 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo):
         print(colored(f"{threading.current_thread().name}->Tiempo hasta el partido {diferenciaHora} horas y {diferenciaMinuto} minutos ","yellow"))
 
         #TODO  mejorar el codigo de diferencia 
-        if diferenciaHora >8 or (diferenciaHora==0 and diferenciaMinuto>=5):
+        if diferenciaHora >5 or (diferenciaHora==0 and diferenciaMinuto>=5):
 
             for button in btn_add_player_to_train:
                 button.click()
                 time.sleep(1)
                 listPlayerToClick = driver.find_elements(By.XPATH, "//table[contains(@id, 'squad-table')]//tr")
                 posicion = random.randint(0, 3)
-                posicion = 0
+                
                 listPlayerToClick[posicion+1].click()
                 print(colored(f"{threading.current_thread().name}->Jugador añadido a {diferenciaHora} horas y {diferenciaMinuto} minutos del partido","yellow"))
 
@@ -469,9 +464,9 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo):
         elif len(btn_add_player_to_train)==4:
             print(colored(f"{threading.current_thread().name}->Pausado, ya que no hay entrenamientos haciendose actualmente, no se puede ver videos entonces","yellow"))
             tiempoEspera = (diferenciaHora*3600)+(diferenciaMinuto*60)
-            time.sleep(tiempoEspera)
+            time.sleep(tiempoEspera+1200)
         else:
-            print(colored(f"{threading.current_thread().name}->La diferencia del partido es menor que 8, entonces no va a añadir ningun jugador a entrenar","yellow"))
+            print(colored(f"{threading.current_thread().name}->La diferencia del partido es menor que 5, entonces no va a añadir ningun jugador a entrenar","yellow"))
 
             
     except Exception:
