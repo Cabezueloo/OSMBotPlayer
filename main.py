@@ -12,7 +12,7 @@ from termcolor import colored
 from datetime import datetime,timedelta
 import random
 from RutuasAlHTML import *
-
+import sys
 #RED Threard 1
 #GREEN Threard 2
 #BLUE Threard 3
@@ -101,7 +101,7 @@ def thread_knowBestBuy():
         
         botonesDisponibles = checkIfCanSell(driver)
 
-        if dinero>10000000 and botonesDisponibles!= 0:
+        if dinero>dineroMinimoParaComprar and botonesDisponibles!= 0:
             # Encontrar la tabla por su clase
             table = driver.find_element(By.XPATH, TABLA_JUGADORES_EN_VENTA)
 
@@ -173,7 +173,7 @@ def thread_knowBestBuy():
                         deff = int(cells[6].text)
                         ovr = int(cells[7].text)
                         priceToBuy = int(float(cells[9].text.replace("M", "")) * 1000000)
-                        if priceToBuy<= dinero and not "Athletic Bilbao" in club and not pos == "GK" :
+                        if priceToBuy<= dinero and not nombreEquipo in club and not pos == "GK" :
                             p = Player(name,pos,age,club,att,deff,ovr,priceToBuy,realPrice)
                             listaJugadores.append(p)
 
@@ -233,8 +233,8 @@ def thread_knowBestBuy():
                     #Esperar a que el hilo termine
                     threadThreeSellPlayer.join()
         
-        if dinero<10000000 or botonesDisponibles==0:
-            info = "Dinero insuficiente" if dinero<10000000 else "No hay huecos de venta disponible 4/4 ocupado"
+        if dinero<dineroMinimoParaComprar or botonesDisponibles==0:
+            info = "Dinero insuficiente" if dinero<dineroMinimoParaComprar else "No hay huecos de venta disponible 4/4 ocupado"
             print(colored(f'{threading.current_thread().name}-> {info}',"green"))
 
         print(colored(f"{threading.current_thread().name}-> Poniendo en espera 30 minutos, hora actual es {datetime.now().strftime('%H:%M:%S')} ","green"))
@@ -304,7 +304,7 @@ def thread_trainingPlayers():
 
         driver = selenium_driver_training_players.driver
         
-        checkTrainingCompletedAndManageToPutAPlayerToTrain(driver=driver,comprobarTiempo=True)
+        checkTrainingCompletedAndManageToPutAPlayerToTrain(driver=driver)
 
         #Watch adds in training
         try:
@@ -346,7 +346,7 @@ def thread_trainingPlayers():
                         break
                 #Volvemos ha comprobar si con el click ha sido conpletado el tiempo, pero al tiempo que falta se aplica un modificador de mas 3 horas de margen
                 else:
-                    checkTrainingCompletedAndManageToPutAPlayerToTrain(driver=driver,comprobarTiempo=False)
+                    checkTrainingCompletedAndManageToPutAPlayerToTrain(driver=driver)
 
 
         except Exception:
@@ -356,19 +356,29 @@ def thread_trainingPlayers():
 
 if __name__ == "__main__":
 
-    # Crear los hilos
+    # Obtener parámetros desde el menú (o usar valores por defecto)
+    nombreEquipo : str= sys.argv[1] if len(sys.argv) > 1 else "Athletic Bilbao"
+    dineroMinimoParaComprar : int= int(sys.argv[2]) if len(sys.argv) > 2 else 10000000
+    controlVideoMonedas :bool= eval(sys.argv[3]) if len(sys.argv) > 3 else True
+    controlCompraVenta :bool= eval(sys.argv[4]) if len(sys.argv) > 4 else True
+    controlEntrenamientoJugadores :bool= eval(sys.argv[5]) if len(sys.argv) > 5 else True
+
+
+    # Crear los hilos y ejecutar
     threadOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos,name="Hilo 1")
     threadTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy, name="Hilo 2")
     #HILO PONE EN VENTA A LOS JUGADORES COMPRADOS DEL HILO DOS, SE CREA DESDE EL HILO 2
-
     threadFourControlOfTrainingPlayers = threading.Thread(target=thread_trainingPlayers, name="Hilo 4")
 
 
     # Iniciar los hilos
-    threadOneControlOfCoinsVideos.start()
-    threadTwoControlOfTransferList.start()
-    threadFourControlOfTrainingPlayers.start()
-
+    if controlVideoMonedas:
+        threadOneControlOfCoinsVideos.start()
+    if controlCompraVenta:
+        threadTwoControlOfTransferList.start()
+    if controlEntrenamientoJugadores:
+        threadFourControlOfTrainingPlayers.start()
+    
 
     
 #Funciones
