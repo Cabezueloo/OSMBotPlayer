@@ -9,7 +9,7 @@ from Player import Player
 import re
 from SeleniumDriver import SeleniumDriver
 from termcolor import colored 
-from datetime import datetime
+from datetime import datetime,timedelta
 import random
 from RutuasAlHTML import *
 
@@ -404,7 +404,7 @@ def getTimeToSleep(text, driver,color) -> int:
 
     return numeroEspera
 
-def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo) -> None:
+def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver) -> None:
     
     '''Funcion encargada de comprobar los jugadores que han acabado el entrenamiento
     para pulsar el boton de ok.
@@ -432,22 +432,32 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo) -
         btn_add_player_to_train = driver.find_elements(By.XPATH, BOTON_START_PONER_JUGADOR_A_ENTRENAR)
         
         #Para que no ponga a entrenar a jugador si hay partido a menos de 8 horas
-        tiempoActual = datetime.now().time()
-        tiempoDelPartido = datetime.strptime('20::20::00','%H::%M::%S').time()
-        diferenciaHora = abs(tiempoDelPartido.hour - tiempoActual.hour)
-        diferenciaMinuto= tiempoActual.minute - tiempoDelPartido.minute
+        tiempoActual = datetime.now()
+        tiempoDelPartido = tiempoActual.replace(hour=20, minute=20, second=0, microsecond=0)
 
-        if not comprobarTiempo:
-            diferenciaHora = diferenciaHora+3
+        # Si la hora del partido ya pasó hoy, ajustamos para el día siguiente
+        if tiempoDelPartido < tiempoActual:
+            tiempoDelPartido += timedelta(days=1)
+
+        # Calcular la diferencia
+
+        diferencia = tiempoDelPartido - tiempoActual
         
+        #Convertir la diferencia a segundos, horas y minutos
+        segundos = diferencia.total_seconds()
+        diferenciaHora = int(segundos//(3600))
+        diferenciaMinuto= int(segundos%(3600) // 60)
+
+                
         print(colored(f"{threading.current_thread().name}->Tiempo hasta el partido {diferenciaHora} horas y {diferenciaMinuto} minutos ","yellow"))
 
         #TODO  mejorar el codigo de diferencia 
-        if diferenciaHora >5 or (diferenciaHora==0 and diferenciaMinuto>=5):
+        if diferenciaHora >7:
 
             for button in btn_add_player_to_train:
                 button.click()
                 time.sleep(1)
+                
                 listPlayerToClick = driver.find_elements(By.XPATH, "//table[contains(@id, 'squad-table')]//tr")
                 posicion = random.randint(0, 3)
                 
@@ -464,9 +474,9 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver,comprobarTiempo) -
         elif len(btn_add_player_to_train)==4:
             print(colored(f"{threading.current_thread().name}->Pausado, ya que no hay entrenamientos haciendose actualmente, no se puede ver videos entonces","yellow"))
             tiempoEspera = (diferenciaHora*3600)+(diferenciaMinuto*60)
-            time.sleep(tiempoEspera+1200)
+            time.sleep(tiempoEspera+1800) #+30 minuts de margen 
         else:
-            print(colored(f"{threading.current_thread().name}->La diferencia del partido es menor que 5, entonces no va a añadir ningun jugador a entrenar","yellow"))
+            print(colored(f"{threading.current_thread().name}->La diferencia del partido es menor que 7 horas, entonces no va a añadir ningun jugador a entrenar","yellow"))
 
             
     except Exception:
