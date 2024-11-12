@@ -178,7 +178,7 @@ def thread_knowBestBuy():
                             listaJugadores.append(p)
 
             
-
+            print("Ordenar")
             # Ordenar primero por 'inflated' en orden ascendente y luego por 'avrMedia' en orden descendente
             listaJugadores.sort(key=lambda x: (x.inflated, -x.avrMedia))
             for x in listaJugadores:
@@ -222,13 +222,15 @@ def thread_knowBestBuy():
                     time.sleep(3)
 
                     #Refrescamos la pagina en cada compra(cada click)
-                    #selenium_driver_best_buy.refresh_page()
+                    selenium_driver_best_buy.refresh_page()
                 
                 if len(jugadoresParaComprar)>=1:
                     #Los ponemos a la venta
                     threadThreeSellPlayer = threading.Thread(target=thread_sellPlayer,args=(jugadoresParaComprar,),name="Hilo 3")
                     
                     # Iniciar el hilo
+                    print("Iniciado controlador de poner jugadores comprados a vender")
+
                     threadThreeSellPlayer.start()
                     #Esperar a que el hilo termine
                     threadThreeSellPlayer.join()
@@ -281,7 +283,7 @@ def thread_sellPlayer(jugadoresParaVender):
         
         time.sleep(1)
         
-        selenium_driver_sellPlayer.actions.click_and_hold(element_to_drag).move_by_offset(200, 0).release().perform()
+        selenium_driver_sellPlayer.actions.click_and_hold(element_to_drag).move_by_offset(400, 0).release().perform()
 
         #Confirmar poner en la venta
         a_element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'row player-profile-details player-profile-button')]//a[contains(@class, 'btn-new btn-primary btn-wide')]")))
@@ -373,10 +375,13 @@ if __name__ == "__main__":
 
     # Iniciar los hilos
     if controlVideoMonedas:
+        print("Iniciado controlador de video monedas")
         threadOneControlOfCoinsVideos.start()
     if controlCompraVenta:
+        print("Iniciado controlador de compra-venta")
         threadTwoControlOfTransferList.start()
     if controlEntrenamientoJugadores:
+        print("Iniciado controlador de entrenamiento de jugadores")
         threadFourControlOfTrainingPlayers.start()
     
 
@@ -470,7 +475,7 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver) -> None:
                 
                 listPlayerToClick = driver.find_elements(By.XPATH, "//table[contains(@id, 'squad-table')]//tr")
                 posicion = random.randint(0, 3)
-                
+                posicion = 0
                 listPlayerToClick[posicion+1].click()
                 print(colored(f"{threading.current_thread().name}->Jugador añadido a {diferenciaHora} horas y {diferenciaMinuto} minutos del partido","yellow"))
 

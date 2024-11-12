@@ -6,7 +6,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-
+import platform
+import os
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import random
@@ -19,15 +20,19 @@ class SeleniumDriver:
         self.opts.add_argument("--start-maximized")
         self.opts.add_argument('--log-level=1') # Para que no salga "Created TensorFlow"
 
-        self.opts.add_argument("--headless")  # Ejecutar en modo headless (Segundo plano)
+        #self.opts.add_argument("--headless")  # Ejecutar en modo headless (Segundo plano)
         self.opts.add_argument("--mute-audio")  # Silenciar el audio
         self.opts.add_experimental_option("excludeSwitches", ['enable-logging']) 
         self.opts.add_experimental_option('useAutomationExtension', False)
         
 
         # Crear un servicio para el chromedriver
-        self.service = Service('chromedriver.exe')
-        
+        if platform.system()=="Windows":
+            self.service = Service('chromedriver.exe')
+        elif platform.system()=="Linux":
+            self.opts.binary_location = '/usr/bin/chromium-browser'
+            self.service = Service('/usr/bin/chromedriver')
+
         # Inicializar el driver de Chrome
         self.driver = webdriver.Chrome(service=self.service, options=self.opts)
         self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
