@@ -8,3 +8,5 @@ getListOfTransfersInYourLeague.py
 knowBestBuy.py
 KnowIfAPlayerIsValidToScan.py
 toSell.py
+/envLinux
+/.venv

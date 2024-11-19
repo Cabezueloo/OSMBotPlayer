@@ -23,16 +23,13 @@ def thread_getCoinsWithVideos():
 
     '''Hilo encargado de ver videos siempre que se pueda para recopilar monedas'''
 
-    selenium_driver_get_coins  = SeleniumDriver()
-    selenium_driver_get_coins.load_url("https://en.onlinesoccermanager.com/BusinessClub")
-    selenium_driver_get_coins.load_cookies()
-    selenium_driver_get_coins.refresh_page()
+    selenium_driver_get_coins : SeleniumDriver = SeleniumDriver()
+    selenium_driver_get_coins.create("https://en.onlinesoccermanager.com/BusinessClub")
 
-    driver = selenium_driver_get_coins.driver
-    selenium_driver_get_coins.actions()
 
     while True:
         try:
+            driver = selenium_driver_get_coins.driver
 
             WebDriverWait(driver, 10).until(EC.invisibility_of_element((By.CLASS_NAME, "fc-dialog-overlay")))
 
@@ -67,8 +64,15 @@ def thread_getCoinsWithVideos():
                     timeToSleep = getTimeToSleep(text,driver,color = "red")
 
                     print(colored(f"{threading.current_thread().name}-> Poniendo en espera {timeToSleep//60} minutos el apartado de ver videos para monedas. Hora actual es {datetime.now().strftime('%H:%M:%S')}","red"))
-                
+
+
+                    driver.quit() #Para ahorrar recursos cerramos el driver
                     time.sleep(timeToSleep)
+                    #Creamos de nuevo el objeto controlador(selenium)
+
+                    selenium_driver_get_coins : SeleniumDriver = SeleniumDriver()
+                    selenium_driver_get_coins.create("https://en.onlinesoccermanager.com/BusinessClub")
+
 
                 except Exception:
                     driver.refresh()
@@ -84,19 +88,15 @@ def thread_getCoinsWithVideos():
 def thread_knowBestBuy():
 
     selenium_driver_best_buy  = SeleniumDriver()
-    selenium_driver_best_buy.load_url("https://en.onlinesoccermanager.com/Transferlist/")
-    selenium_driver_best_buy.load_cookies()
-    selenium_driver_best_buy.refresh_page()
-    selenium_driver_best_buy.actions()
+    selenium_driver_best_buy.create("https://en.onlinesoccermanager.com/Transferlist/")
 
     
     while True:
         driver = selenium_driver_best_buy.driver
+
         #Dinero en la cuenta
-        span_element = driver.find_element(By.CSS_SELECTOR, 
-            'span[data-bind="currency: $parent.shouldShowSavings() ? $parent.savings() : animatedProgress(), roundCurrency: RoundCurrency.Downwards, fractionDigitsK: 1, fractionDigits: 1"]')
-        dinero = int(float(span_element.get_attribute("innerHTML").replace("M", "")) * 1000000)
-        
+        dinero = getMoneyInAccount(driver)
+
         print(colored(f'{threading.current_thread().name}-> Dinero que tengo es de:{dinero} ',"green"))
         
         botonesDisponibles = checkIfCanSell(driver)
@@ -173,7 +173,7 @@ def thread_knowBestBuy():
                         deff = int(cells[6].text)
                         ovr = int(cells[7].text)
                         priceToBuy = int(float(cells[9].text.replace("M", "")) * 1000000)
-                        if priceToBuy<= dinero and not nombreEquipo in club and not pos == "GK" :
+                        if priceToBuy<= dinero and not nombreEquipo in club:
                             p = Player(name,pos,age,club,att,deff,ovr,priceToBuy,realPrice)
                             listaJugadores.append(p)
 
@@ -210,11 +210,13 @@ def thread_knowBestBuy():
 
                     span_element.click()
 
-
-                    btnToShop = WebDriverWait(driver,5).until(
-                        EC.element_to_be_clickable((By.XPATH, "//div[@id='modal-dialog-buyforeignplayer']//button[contains(@class, 'btn-new') and contains(@class, 'btn-success') and contains(@class, 'btn-wide')]"))
-
+                    time.sleep(5)
+                    btnToShop = WebDriverWait(driver, 10).until(
+                        EC.element_to_be_clickable((By.XPATH, "//div[@id='modal-dialog-buyforeignplayer'][1]//button[contains(@class, 'btn-new') and contains(@class, 'btn-success') and contains(@class, 'btn-wide')]"))
                     )
+                    driver.execute_script("arguments[0].scrollIntoView(true);", btnToShop)
+                    time.sleep(5)
+                    btnToShop.click()
 
                     # Haz clic en el botón de comprar
                     btnToShop.click()
@@ -240,8 +242,26 @@ def thread_knowBestBuy():
             print(colored(f'{threading.current_thread().name}-> {info}',"green"))
 
         print(colored(f"{threading.current_thread().name}-> Poniendo en espera 30 minutos, hora actual es {datetime.now().strftime('%H:%M:%S')} ","green"))
+        
+        driver.quit() #Ahorrar recursos
         time.sleep(1800) # 30 minutos
-        selenium_driver_best_buy.refresh_page()
+        #Crear de nuevo el objeto 
+        selenium_driver_best_buy  = SeleniumDriver()
+        selenium_driver_best_buy.create("https://en.onlinesoccermanager.com/Transferlist/")
+
+def getMoneyInAccount(driver):
+    dinero = 0
+    
+    span_element = driver.find_element(By.CSS_SELECTOR, 
+            'span[data-bind="currency: $parent.shouldShowSavings() ? $parent.savings() : animatedProgress(), roundCurrency: RoundCurrency.Downwards, fractionDigitsK: 1, fractionDigits: 1"]')
+    dineroString = span_element.get_attribute("innerHTML")
+    if dineroString.__contains__("M"):
+        dinero = int(float(dineroString.replace("M", "")) * 1000000)
+    elif dineroString.__contains__("K"):
+        dinero = int(float(dineroString.replace("K", "")) * 1000)
+
+    return dinero
+        
 
 
 def checkIfCanSell(driver) -> int:
@@ -257,13 +277,9 @@ def checkIfCanSell(driver) -> int:
 
 def thread_sellPlayer(jugadoresParaVender):
     selenium_driver_sellPlayer= SeleniumDriver()
-    selenium_driver_sellPlayer.load_url("https://en.onlinesoccermanager.com/Transferlist#sell-players")
-    selenium_driver_sellPlayer.load_cookies()
-    selenium_driver_sellPlayer.refresh_page()
+    selenium_driver_sellPlayer.create("https://en.onlinesoccermanager.com/Transferlist#sell-players")
     driver = selenium_driver_sellPlayer.driver
 
-    # Crea una instancia de ActionChains
-    selenium_driver_sellPlayer.actions()
     
     botonesDisponibles = driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-new') and contains(@class, 'btn-wide') and contains(@data-bind, 'showSelectSellPlayerModal')]")
 
@@ -286,7 +302,7 @@ def thread_sellPlayer(jugadoresParaVender):
         selenium_driver_sellPlayer.actions.click_and_hold(element_to_drag).move_by_offset(400, 0).release().perform()
 
         #Confirmar poner en la venta
-        a_element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'row player-profile-details player-profile-button')]//a[contains(@class, 'btn-new btn-primary btn-wide')]")))
+        a_element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH,BOTON_CONFIRMAR_PONER_A_LA_VENTA )))
         a_element.click()
 
         print(colored(f'{threading.current_thread().name}-> El jugador, {jugadorAVender} se ha puesto en venta',"blue"))
@@ -297,13 +313,10 @@ def thread_sellPlayer(jugadoresParaVender):
 def thread_trainingPlayers():
 
     selenium_driver_training_players  = SeleniumDriver()
-    selenium_driver_training_players.load_url("https://en.onlinesoccermanager.com/Training")
-    selenium_driver_training_players.load_cookies()
+    selenium_driver_training_players.create("https://en.onlinesoccermanager.com/Training")
 
     while True:
-        
-        selenium_driver_training_players.refresh_page()
-
+    
         driver = selenium_driver_training_players.driver
         
         checkTrainingCompletedAndManageToPutAPlayerToTrain(driver=driver)
@@ -342,8 +355,12 @@ def thread_trainingPlayers():
                         timeToSleep = getTimeToSleep(text,driver,color="yellow")
 
                         print(colored(f"{threading.current_thread().name}-> Poniendo en espera la parte de el entrenamiento de jugador por no poder ver mas videos {timeToSleep//60} minutos, hora actual es {datetime.now().strftime('%H:%M:%S')}","yellow"))
-                    
+                        
+                        driver.quit()
                         time.sleep(timeToSleep)
+
+                        selenium_driver_training_players  = SeleniumDriver()
+                        selenium_driver_training_players.create("https://en.onlinesoccermanager.com/Training")
                     except Exception:
                         break
                 #Volvemos ha comprobar si con el click ha sido conpletado el tiempo, pero al tiempo que falta se aplica un modificador de mas 3 horas de margen
@@ -489,6 +506,7 @@ def checkTrainingCompletedAndManageToPutAPlayerToTrain(driver) -> None:
         elif len(btn_add_player_to_train)==4:
             print(colored(f"{threading.current_thread().name}->Pausado, ya que no hay entrenamientos haciendose actualmente, no se puede ver videos entonces","yellow"))
             tiempoEspera = (diferenciaHora*3600)+(diferenciaMinuto*60)
+            
             time.sleep(tiempoEspera+1800) #+30 minuts de margen 
         else:
             print(colored(f"{threading.current_thread().name}->La diferencia del partido es menor que 7 horas, entonces no va a añadir ningun jugador a entrenar","yellow"))

@@ -21,3 +21,6 @@ BOTON_START_PONER_JUGADOR_A_ENTRENAR = "//button[contains(@class, 'btn-new btn-p
 
 BOTON_OK_MENSAJE_CONFIRMACION_PONER_JUGADOR_A_ENTRENAR = "//div[@id='modal-dialog-confirm']//div[@data-bind='click: okAction']"
 
+#VENTA
+BOTON_CONFIRMAR_PONER_A_LA_VENTA = "//div[contains(@class, 'row player-card-menu center slide-out-bottom-animation')]//a[contains(@class, 'btn-new btn-primary btn-wide')]"
+
