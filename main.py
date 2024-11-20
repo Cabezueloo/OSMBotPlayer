@@ -193,7 +193,7 @@ def thread_knowBestBuy():
 
                 #Checkear los jugadores que compraremos
                 for x in range(botonesDisponibles):
-                    if dinero>= listaJugadores[x].priceToBuy:
+                    if dinero>= listaJugadores[x].priceToBuy and listaJugadores[x].inflated < 35 :
                         dinero = dinero - listaJugadores[x].priceToBuy
                         jugadoresParaComprar.append(listaJugadores[x].name)
                     else:
@@ -206,9 +206,10 @@ def thread_knowBestBuy():
                 for jugadorNombre in jugadoresParaComprar:
 
                     #Hacer click y comprar
-                    span_element = driver.find_element(By.XPATH, f"//td[.//span[text()='{jugadorNombre}']]")
-
-                    span_element.click()
+                    time.sleep(2)
+                    span_element = driver.find_element(By.XPATH, f"//table[contains(@class, 'table table-sticky thSortable')]//td[.//span[text()='{jugadorNombre}']]")
+                    
+                    selenium_driver_best_buy.actions.move_to_element(span_element).click().perform()
 
                     time.sleep(5)
                     btnToShop = WebDriverWait(driver, 10).until(
@@ -227,6 +228,7 @@ def thread_knowBestBuy():
                     selenium_driver_best_buy.refresh_page()
                 
                 if len(jugadoresParaComprar)>=1:
+                    
                     #Los ponemos a la venta
                     threadThreeSellPlayer = threading.Thread(target=thread_sellPlayer,args=(jugadoresParaComprar,),name="Hilo 3")
                     
@@ -286,7 +288,8 @@ def thread_sellPlayer(jugadoresParaVender):
 
 
     for indice, jugadorAVender in enumerate(jugadoresParaVender):
-        
+
+        time.sleep(1)
         botonesDisponibles[indice].click()
         time.sleep(3)
         span_element = driver.find_element(By.XPATH, f"//td[.//span[text()='{jugadorAVender}']]")
@@ -378,9 +381,9 @@ if __name__ == "__main__":
     # Obtener parámetros desde el menú (o usar valores por defecto)
     nombreEquipo : str= sys.argv[1] if len(sys.argv) > 1 else "Athletic Bilbao"
     dineroMinimoParaComprar : int= int(sys.argv[2]) if len(sys.argv) > 2 else 10000000
-    controlVideoMonedas :bool= eval(sys.argv[3]) if len(sys.argv) > 3 else True
+    controlVideoMonedas :bool= eval(sys.argv[3]) if len(sys.argv) > 3 else False
     controlCompraVenta :bool= eval(sys.argv[4]) if len(sys.argv) > 4 else True
-    controlEntrenamientoJugadores :bool= eval(sys.argv[5]) if len(sys.argv) > 5 else True
+    controlEntrenamientoJugadores :bool= eval(sys.argv[5]) if len(sys.argv) > 5 else False
 
 
     # Crear los hilos y ejecutar
