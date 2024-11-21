@@ -66,12 +66,8 @@ def thread_getCoinsWithVideos():
                     print(colored(f"{threading.current_thread().name}-> Poniendo en espera {timeToSleep//60} minutos el apartado de ver videos para monedas. Hora actual es {datetime.now().strftime('%H:%M:%S')}","red"))
 
 
-                    driver.quit() #Para ahorrar recursos cerramos el driver
                     time.sleep(timeToSleep)
-                    #Creamos de nuevo el objeto controlador(selenium)
-
-                    selenium_driver_get_coins : SeleniumDriver = SeleniumDriver()
-                    selenium_driver_get_coins.create("https://en.onlinesoccermanager.com/BusinessClub")
+                    
 
 
                 except Exception:
@@ -172,7 +168,7 @@ def thread_knowBestBuy():
                         att = int(cells[5].text)
                         deff = int(cells[6].text)
                         ovr = int(cells[7].text)
-                        priceToBuy = int(float(cells[9].text.replace("M", "")) * 1000000)
+                        priceToBuy = int(float(cells[9].text.replace("M", "").replace(",","")) * 1000000)
                         if priceToBuy<= dinero and not nombreEquipo in club:
                             p = Player(name,pos,age,club,att,deff,ovr,priceToBuy,realPrice)
                             listaJugadores.append(p)
@@ -245,11 +241,10 @@ def thread_knowBestBuy():
 
         print(colored(f"{threading.current_thread().name}-> Poniendo en espera 30 minutos, hora actual es {datetime.now().strftime('%H:%M:%S')} ","green"))
         
-        driver.quit() #Ahorrar recursos
         time.sleep(1800) # 30 minutos
-        #Crear de nuevo el objeto 
-        selenium_driver_best_buy  = SeleniumDriver()
-        selenium_driver_best_buy.create("https://en.onlinesoccermanager.com/Transferlist/")
+        
+        #Cuando pase el tiempo, reiniciamos la pagina
+        selenium_driver_best_buy.refresh_page()
 
 def getMoneyInAccount(driver):
     dinero = 0
@@ -348,7 +343,7 @@ def thread_trainingPlayers():
                     print(colored(f"{threading.current_thread().name}->El video no ha terminado","yellow"))
                     videoMostrado = True
                     time.sleep(15)
-
+                
                 
                 #Comprobamos si nos ha dado mensaje de tiempo de espera para ver mas videos
                 if not videoMostrado:
@@ -359,14 +354,13 @@ def thread_trainingPlayers():
 
                         print(colored(f"{threading.current_thread().name}-> Poniendo en espera la parte de el entrenamiento de jugador por no poder ver mas videos {timeToSleep//60} minutos, hora actual es {datetime.now().strftime('%H:%M:%S')}","yellow"))
                         
-                        driver.quit()
                         time.sleep(timeToSleep)
 
-                        selenium_driver_training_players  = SeleniumDriver()
-                        selenium_driver_training_players.create("https://en.onlinesoccermanager.com/Training")
+                        selenium_driver_training_players.refresh_page()
+
                     except Exception:
                         break
-                #Volvemos ha comprobar si con el click ha sido conpletado el tiempo, pero al tiempo que falta se aplica un modificador de mas 3 horas de margen
+                
                 else:
                     checkTrainingCompletedAndManageToPutAPlayerToTrain(driver=driver)
 
