@@ -4,7 +4,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import * 
 import sys
 import subprocess  # Para ejecutar el juego como otro proceso
-
+import threading
+from main import thread_getCoinsWithVideos,thread_knowBestBuy,thread_trainingPlayers
 
 class Menu(QWidget):
 
@@ -68,16 +69,23 @@ class Menu(QWidget):
         self.setVisible(False)
 
         
-
-        subprocess.run([sys.executable, "main.py",
-                        nombreEquipo,
-                        str(millonesMinimos),
-                        str(controlVideoMonedas),
-                        str(controlCompraVenta),
-                        str(controlEntrenamientoJugadores)],
-                    stdout=sys.stdout,
-                    stderr=sys.stderr)
+        # Crear los hilos y ejecutar
+        threadOneControlOfCoinsVideos = threading.Thread(target=thread_getCoinsWithVideos,name="Hilo 1")
+        threadTwoControlOfTransferList = threading.Thread(target=thread_knowBestBuy,args=(millonesMinimos,nombreEquipo,),name="Hilo 2")
+        #HILO PONE EN VENTA A LOS JUGADORES COMPRADOS DEL HILO DOS, SE CREA DESDE EL HILO 2
+        threadFourControlOfTrainingPlayers = threading.Thread(target=thread_trainingPlayers, name="Hilo 4")
         
+        # Iniciar los hilos
+        if controlVideoMonedas:
+            print("Iniciado controlador de video monedas")
+            threadOneControlOfCoinsVideos.start()
+        if controlCompraVenta:
+            print("Iniciado controlador de compra-venta")
+            threadTwoControlOfTransferList.start()
+        if controlEntrenamientoJugadores:
+            print("Iniciado controlador de entrenamiento de jugadores")
+            threadFourControlOfTrainingPlayers.start()
+
 
         # Volver a habilitar el menú una vez termine el bot
         self.setEnabled(True)

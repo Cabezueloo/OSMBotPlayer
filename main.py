@@ -81,7 +81,7 @@ def thread_getCoinsWithVideos():
             driver.refresh()
 
 
-def thread_knowBestBuy():
+def thread_knowBestBuy(dineroMinimoParaComprar=10000000,nombreEquipo="Athletic Bilbao"):
 
     selenium_driver_best_buy  = SeleniumDriver()
     selenium_driver_best_buy.create("https://en.onlinesoccermanager.com/Transferlist/")
@@ -375,9 +375,9 @@ if __name__ == "__main__":
     # Obtener parámetros desde el menú (o usar valores por defecto)
     nombreEquipo : str= sys.argv[1] if len(sys.argv) > 1 else "Athletic Bilbao"
     dineroMinimoParaComprar : int= int(sys.argv[2]) if len(sys.argv) > 2 else 10000000
-    controlVideoMonedas :bool= eval(sys.argv[3]) if len(sys.argv) > 3 else False
+    controlVideoMonedas :bool= eval(sys.argv[3]) if len(sys.argv) > 3 else True
     controlCompraVenta :bool= eval(sys.argv[4]) if len(sys.argv) > 4 else True
-    controlEntrenamientoJugadores :bool= eval(sys.argv[5]) if len(sys.argv) > 5 else False
+    controlEntrenamientoJugadores :bool= eval(sys.argv[5]) if len(sys.argv) > 5 else True
 
 
     # Crear los hilos y ejecutar

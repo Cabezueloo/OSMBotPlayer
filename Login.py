@@ -25,6 +25,7 @@ url = 'https://en.onlinesoccermanager.com/'
 driver.get(url)
 
 while True:
+    
     try:
         driver.get_window_size()
         if str(driver.current_url).split('/')[-1] == 'Dashboard':

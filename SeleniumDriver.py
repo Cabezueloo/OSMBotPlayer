@@ -14,13 +14,17 @@ import random
 
 
 class SeleniumDriver:
-    def __init__(self):
+    def __init__(self,modoVerActivado=False):
         # Configuración de opciones de Chrome
         self.opts = Options()
         self.opts.add_argument("--start-maximized")
         self.opts.add_argument('--log-level=1') # Para que no salga "Created TensorFlow"
         self.opts.add_argument("auto-open-devtools-for-tabs")
-        #self.opts.add_argument("--headless")  # Ejecutar en modo headless (Segundo plano)
+        
+
+        if not modoVerActivado:
+            self.opts.add_argument("--headless")  # Ejecutar en modo headless (Segundo plano)
+            
         self.opts.add_argument("--mute-audio")  # Silenciar el audio
         self.opts.add_experimental_option("excludeSwitches", ['enable-logging']) #Only to Chorme
         self.opts.add_experimental_option('useAutomationExtension', False) #Only to Chorme
