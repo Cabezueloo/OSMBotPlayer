@@ -39,11 +39,12 @@ class Inicio(QWidget):
             self.passwordUser.setFont(QFont("Arial", 10))
 
             self.btnLogin = QPushButton("Aceptar", self)
+            
             self.btnLogin.clicked.connect(self.tryLogin)
 
             flo = QFormLayout()
-            flo.addRow("Nombre del equipo a controlar", self.nameUser)
-            flo.addRow("Millones que tienes que tener para buscar jugadores y comprar-vender", self.passwordUser)
+            flo.addRow("Nombre de entrenador", self.nameUser)
+            flo.addRow("Contraseña", self.passwordUser)
             flo.addRow(self.btnLogin)
 
             self.setLayout(flo)
@@ -68,7 +69,7 @@ class Inicio(QWidget):
 
                 f.write(passwordText)
                 
-                #execMenuApp()
+                execMenuApp()
 
 
 if __name__ == "__main__":

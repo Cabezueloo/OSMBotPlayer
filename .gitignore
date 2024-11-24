@@ -10,3 +10,5 @@ KnowIfAPlayerIsValidToScan.py
 toSell.py
 /envLinux
 /.venv
+/userData
+/ignore

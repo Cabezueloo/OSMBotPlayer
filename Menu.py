@@ -3,8 +3,9 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import * 
 from PyQt5.QtCore import * 
 import sys
-import subprocess  # Para ejecutar el juego como otro proceso
-import threading
+from utils import *
+import os 
+import threading 
 from main import thread_getCoinsWithVideos,thread_knowBestBuy,thread_trainingPlayers
 
 class Menu(QWidget):
@@ -23,13 +24,13 @@ class Menu(QWidget):
 
         # creating the check-box
         self.checkbox_video_monedas = QCheckBox('Ver videos automaticamente para conseguir monedas', self)
-        self.checkbox_video_monedas.setChecked(True)
+        self.checkbox_video_monedas.setChecked(False)
 
         self.checkbox_compra_venta = QCheckBox('Control de compra-venta de jugadoes', self)
-        self.checkbox_compra_venta.setChecked(True)
+        self.checkbox_compra_venta.setChecked(False)
 
         self.checkbox_control_jugadores = QCheckBox('Control de entrenar jugadores', self)
-        self.checkbox_control_jugadores.setChecked(True)
+        self.checkbox_control_jugadores.setChecked(False)
 
         self.layoutChecksBoxs = QHBoxLayout()
         self.layoutChecksBoxs.addWidget(self.checkbox_video_monedas)
@@ -47,7 +48,32 @@ class Menu(QWidget):
         flo.addRow(self.layoutChecksBoxs)
         flo.addRow(btn_start)
 
+        if os.path.exists(OPTIONS_MENU):
+            self.lastOptionsMarked()
+        
         self.setLayout(flo)
+
+        
+
+    def lastOptionsMarked(self):
+        file=open(OPTIONS_MENU,"r")
+
+        text = file.read()
+
+        dictionari :dict = eval(text)
+        self.nombreEquipo.setText(dictionari.get(NAME_TEAM))
+        self.millonesCompraVenta.setText(dictionari.get(MIN_MONEY))
+
+        if eval(dictionari.get(VIDEO_COINS)):
+            self.checkbox_video_monedas.setChecked(True)
+
+        if eval(dictionari.get(TRADING)):
+            self.checkbox_compra_venta.setChecked(True)
+
+        if eval(dictionari.get(TRAINING_PLAYERS)):
+            self.checkbox_control_jugadores.setChecked(True)
+
+
 
     def btn_clicked(self):
 
@@ -63,7 +89,18 @@ class Menu(QWidget):
         print("Control Compra-Venta-> ", controlCompraVenta)
         print("Control Entrenamiento Jugadores-> ", controlEntrenamientoJugadores)
 
-       
+        if not os.path.exists(OPTIONS_MENU):
+            f = open(OPTIONS_MENU,"x")
+        else:
+           f = open(OPTIONS_MENU,"w") 
+               
+        
+        f.write("{\n'"+NAME_TEAM+"':'"+nombreEquipo+"',\n")
+        f.write("'"+MIN_MONEY+"':'"+str(millonesMinimos)+"',\n")
+        f.write("'"+VIDEO_COINS+"':'"+str(controlVideoMonedas)+"',\n")
+        f.write("'"+TRADING+"':'"+str(controlCompraVenta)+"',\n")
+        f.write("'"+TRAINING_PLAYERS+"':'"+str(controlEntrenamientoJugadores)+"'\n}")
+
         # Ejecutar el bot con los parámetros introducidos
         self.setEnabled(False)
         self.setVisible(False)
