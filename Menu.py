@@ -7,6 +7,7 @@ from utils import *
 import os 
 import threading 
 from main import thread_getCoinsWithVideos,thread_knowBestBuy,thread_trainingPlayers
+import time
 
 class Menu(QWidget):
 
@@ -40,13 +41,30 @@ class Menu(QWidget):
        
 
         btn_start = QPushButton("Start")
-        btn_start.clicked.connect(self.btn_clicked)
+        btn_start.clicked.connect(self.btn_start_clicked)
+
+        self.layoutBtnCloseAndLogOut = QHBoxLayout()
+        btn_logOut = QPushButton("Log Out")
+        btn_logOut.clicked.connect(self.btn_logOut_clicked)
+
+        btn_close = QPushButton("Close")
+        btn_close.clicked.connect(self.btn_close_clicked)
+        
+        self.layoutBtnCloseAndLogOut.addWidget(btn_logOut)
+        self.layoutBtnCloseAndLogOut.addWidget(btn_close)
+
+        self.outTextBot = QTextEdit()
+        self.outTextBot.setFixedSize(600,200)
+        #self.outTextBot.setDisabled(True)
+
 
         flo = QFormLayout()
         flo.addRow("Nombre del equipo a controlar", self.nombreEquipo)
         flo.addRow("Millones que tienes que tener para buscar jugadores y comprar-vender", self.millonesCompraVenta)
         flo.addRow(self.layoutChecksBoxs)
         flo.addRow(btn_start)
+        flo.addRow(self.layoutBtnCloseAndLogOut)
+        flo.addRow(self.outTextBot)
 
         if os.path.exists(OPTIONS_MENU):
             self.lastOptionsMarked()
@@ -54,6 +72,16 @@ class Menu(QWidget):
         self.setLayout(flo)
 
         
+    def btn_logOut_clicked(self):
+        if os.path.exists(CREDENTIALS_ACCOUNT_FILE) and os.path.exists(COOKIE_USER_ACCOUNT):
+            os.remove(CREDENTIALS_ACCOUNT_FILE)   
+            os.remove(COOKIE_USER_ACCOUNT)   
+            #execInicioApp()   
+
+
+
+    def btn_close_clicked(self):
+        sys.exit()
 
     def lastOptionsMarked(self):
         file=open(OPTIONS_MENU,"r")
@@ -75,7 +103,7 @@ class Menu(QWidget):
 
 
 
-    def btn_clicked(self):
+    def btn_start_clicked(self):
 
         nombreEquipo: str = self.nombreEquipo.text()
         millonesMinimos: int = int(self.millonesCompraVenta.text())
@@ -102,8 +130,8 @@ class Menu(QWidget):
         f.write("'"+TRAINING_PLAYERS+"':'"+str(controlEntrenamientoJugadores)+"'\n}")
 
         # Ejecutar el bot con los parámetros introducidos
-        self.setEnabled(False)
-        self.setVisible(False)
+        #self.setEnabled(False)
+        #self.setVisible(False)
 
         
         # Crear los hilos y ejecutar
@@ -112,6 +140,9 @@ class Menu(QWidget):
         #HILO PONE EN VENTA A LOS JUGADORES COMPRADOS DEL HILO DOS, SE CREA DESDE EL HILO 2
         threadFourControlOfTrainingPlayers = threading.Thread(target=thread_trainingPlayers, name="Hilo 4")
         
+
+        #Antes de iniciar creamos el fichero de redireccion
+
         # Iniciar los hilos
         if controlVideoMonedas:
             print("Iniciado controlador de video monedas")
@@ -123,14 +154,34 @@ class Menu(QWidget):
             print("Iniciado controlador de entrenamiento de jugadores")
             threadFourControlOfTrainingPlayers.start()
 
+        text : str = ""
+        
+        threarControlOutput = threading.Thread(target=self.thread_controOutput)
+        threarControlOutput.start()
+        
+       
+
+
+
 
         # Volver a habilitar el menú una vez termine el bot
         self.setEnabled(True)
         self.setVisible(True)
 
+    def thread_controOutput(self):
+        f = open(REDIRECTION,"r")
+        while(1):
+            #time.sleep(30)
+            text = f.read()
+            #print(text)
+            self.outTextBot.setText(text)
 
-if __name__ == "__main__":
+def execMenuApp():
     app = QApplication(sys.argv)
     win = Menu()
     win.show()
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    execMenuApp()

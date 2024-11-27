@@ -2,27 +2,22 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui 
 from PyQt5.QtGui import * 
 from PyQt5.QtCore import * 
-import sys
-import subprocess  # Para ejecutar el juego como otro proceso
-import threading
+
 import os
 from hashlib import blake2b
 
-from Menu import Menu
+from Menu import execMenuApp
 from AutomaticLogin import automaticLogin
 
 from utils import CREDENTIALS_ACCOUNT_FILE
 
-def execMenuApp():
-    app = QApplication(sys.argv)
-    win = Menu()
-    win.show()
-    sys.exit(app.exec_())
+
 
 class Inicio(QWidget):
 
     if os.path.exists(CREDENTIALS_ACCOUNT_FILE):
         execMenuApp()
+        print("pass")
 
     #The user need to login in OSM to get the cookies
     else:
@@ -30,7 +25,7 @@ class Inicio(QWidget):
             super().__init__(parent)
             self.setWindowTitle("Requisitos")
             self.resize(100, 100)
-
+            
             self.nameUser = QLineEdit()
             self.nameUser.setFont(QFont("Arial", 10))
 
@@ -68,13 +63,19 @@ class Inicio(QWidget):
                 #passwordHashed = blake2b(passwordText).hexdigest()
 
                 f.write(passwordText)
-                
+
+                QtCore.QCoreApplication.quit()
                 execMenuApp()
+
+def execInicioApp():
+    app = QApplication([])
+    win = Inicio()
+    win.show()
+    app.exec_()
+
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    win = Inicio()
-    win.show()
-    sys.exit(app.exec_())
+    execInicioApp()
+   
         

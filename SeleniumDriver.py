@@ -23,7 +23,8 @@ class SeleniumDriver:
         
 
         if not modoVerActivado:
-            self.opts.add_argument("--headless")  # Ejecutar en modo headless (Segundo plano)
+            pass
+            #self.opts.add_argument("--headless")  # Ejecutar en modo headless (Segundo plano)
             
             
         self.opts.add_argument("--mute-audio")  # Silenciar el audio

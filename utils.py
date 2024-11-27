@@ -9,3 +9,5 @@ MIN_MONEY = "min_money"
 VIDEO_COINS = "video_coins"
 TRADING = "traiding"
 TRAINING_PLAYERS = "training_players"
+
+REDIRECTION = "Redirection.txt"

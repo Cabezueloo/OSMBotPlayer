@@ -13,6 +13,8 @@ from datetime import datetime,timedelta
 import random
 from RutuasAlHTML import *
 import sys
+from utils import REDIRECTION
+
 #RED Threard 1
 #GREEN Threard 2
 #BLUE Threard 3
@@ -26,9 +28,9 @@ def thread_getCoinsWithVideos():
     selenium_driver_get_coins : SeleniumDriver = SeleniumDriver()
     selenium_driver_get_coins.create("https://en.onlinesoccermanager.com/BusinessClub")
 
-
     while True:
         try:
+            file = open(REDIRECTION,"a")
             driver = selenium_driver_get_coins.driver
 
             WebDriverWait(driver, 10).until(EC.invisibility_of_element((By.CLASS_NAME, "fc-dialog-overlay")))
@@ -41,6 +43,10 @@ def thread_getCoinsWithVideos():
             # Hacer clic en el elemento para reproducir el video
             play_button.click()
             print(colored(f"{threading.current_thread().name}-> Click hecho en el elemento que contiene el video.","red"))
+            
+            file.write(f"{threading.current_thread().name}-> Click hecho en el elemento que contiene el video.\n")
+            file.close()
+
 
             # Esperar un corto período de tiempo y verificar el estado del video
             time.sleep(5)  # Ajusta este tiempo según la duración de tu espera
@@ -377,7 +383,7 @@ if __name__ == "__main__":
     dineroMinimoParaComprar : int= int(sys.argv[2]) if len(sys.argv) > 2 else 10000000
     controlVideoMonedas :bool= eval(sys.argv[3]) if len(sys.argv) > 3 else True
     controlCompraVenta :bool= eval(sys.argv[4]) if len(sys.argv) > 4 else True
-    controlEntrenamientoJugadores :bool= eval(sys.argv[5]) if len(sys.argv) > 5 else True
+    controlEntrenamientoJugadores :bool= eval(sys.argv[5]) if len(sys.argv) > 5 else True 
 
 
     # Crear los hilos y ejecutar

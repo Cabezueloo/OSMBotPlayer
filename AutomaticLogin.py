@@ -30,7 +30,15 @@ def automaticLogin(username, password) -> bool:
         "userAgent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.53 Safari/537.36'
     })
 
-    time.sleep(10)
+    driver.implicitly_wait(10)
+
+    btn = driver.find_element(By.XPATH,"//button[@class='btn-new btn-orange']//span[@class='font-md']")
+    btn.click()
+    
+
+    btn = driver.find_element(By.XPATH,"//button[@data-bind='click: goToLogin']")
+    btn.click()
+    
     boxName = driver.find_element(By.XPATH, "//input[@id='manager-name']")
     boxName.send_keys(username)
 
@@ -39,14 +47,14 @@ def automaticLogin(username, password) -> bool:
 
     btnLogin = driver.find_element(By.XPATH, "//button[@id='login']")
     btnLogin.click()
-
-    time.sleep(10)
-
+    time.sleep(5)
     if str(driver.current_url).split('/')[-1] == 'Dashboard':
         pickle.dump(driver.get_cookies(), open(COOKIE_USER_ACCOUNT, "wb"))
         print("Completed")
+        
         return True
-            
+    
+    driver.quit()
     return False
 
 
