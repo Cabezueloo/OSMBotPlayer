@@ -1,15 +1,43 @@
-OSM(Online Soccer Manager) bot de gestión
-Juego navegador de gestión de un equipo de futbol, eres el entrenador
+# OSM Bot de Gestión 🏆🤖
 
-Este repositorio consta de varios modos de funcionalidades, de los cuales puedes seleccionar mediante un menú hecho con PYQT
-El bot funciona gracias a la librería Selenium, ja que permite hacer Web scraping y poder simular navegar por una página web.
-Automatización de monedas dentro del juego, el navegador web implementa una opción que té permite estar viendo 24/7 videos de manera automática para conseguir monedas
-Compra-venta de jugadores, el bot gestiona toda la lista de jugadores disponibles para comprar y compra basándose en una fórmula de beneficio y las monedas que tengas disponibles.
-Gestión de entrenamiento -> Agregar jugadores a entrenar automáticamente
+### 📌 Descripción
+**OSM (Online Soccer Manager)** es un juego de navegador en el que gestionas un equipo de fútbol como entrenador.  
+Este repositorio contiene un bot que automatiza varias tareas dentro del juego, permitiéndote optimizar la gestión de tu equipo.
 
-Bot creado con Python gracias al uso de hilos, ja que de esta forma cada hilo gestiona lo deseado
+El bot cuenta con diversas funcionalidades accesibles a través de un menú interactivo desarrollado con **PyQt**.
 
-Futuras mejoras:
-Agregar la plantilla para los días de partido automáticamente
-Refactorizar ciertos apartados del código
-Implementar/mejorar la interfaz del menú
+---
+
+## 🚀 Funcionalidades
+
+### 🔍 Web Scraping y Automatización
+El bot utiliza **Selenium** para interactuar con la interfaz del juego, simulando la navegación por la web y ejecutando acciones automáticamente.
+
+### 💰 Generación Automática de Monedas
+- El bot aprovecha la opción del navegador que permite ver videos 24/7 para obtener monedas de forma automática.
+
+### ⚽ Compra-Venta de Jugadores
+- Analiza la lista de jugadores disponibles en el mercado.
+- Realiza compras basadas en una fórmula de rentabilidad y el saldo disponible.
+
+### 🏋️ Gestión de Entrenamiento
+- Asigna jugadores a entrenar de manera automática.
+
+### 🔀 Uso de Hilos en Python
+- Gracias a la implementación de **hilos (Threads)**, cada funcionalidad es gestionada de forma independiente, optimizando el rendimiento del bot.
+
+---
+
+## 🔧 Futuras Mejoras
+- 📌 **Automatizar la plantilla** para los días de partido.
+- 🛠 **Refactorizar** ciertos apartados del código para mejorar su legibilidad y mantenimiento.
+- 🎨 **Mejorar la interfaz** del menú para una mejor experiencia de usuario.
+
+---
+
+💻 **Desarrollado con Python**  
+📌 **Tecnologías utilizadas**: Selenium, PyQt, Multithreading
+
+---
+
+📝 ¡Sigue el proyecto para futuras actualizaciones!
