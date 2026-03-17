@@ -1,3 +1,4 @@
 selenium
 termcolor
 webdriver-manager
+PyQt5

@@ -1,30 +1,40 @@
+"""Player data model for OSM transfer-list analysis."""
+
+from dataclasses import dataclass, field
+from functools import total_ordering
+
+
+@total_ordering
+@dataclass
 class Player:
-    def __init__(self,name,pos,age,club,att,deff,ovr,priceToBuy,realPrice):
-        self.name = name
-        self.pos = pos
-        self.age = age
-        self.club = club
-        self.att = att
-        self.deff = deff
-        self.ovr = ovr
-        self.priceToBuy = priceToBuy
-        self.realPrice = realPrice
-        self.inflated = (self.priceToBuy - self.realPrice) /self.realPrice * 100
-        self.avrMedia = (att+deff+ovr)//3
-    
+    name: str
+    pos: str
+    age: str
+    club: str
+    att: int
+    deff: int
+    ovr: int
+    priceToBuy: int
+    realPrice: int
+    inflated: float = field(init=False)
+    avrMedia: int = field(init=False)
 
-    def __eq__(self, other):
-        return self.avrMedia == other.avrMedia and self.inflated == other.inflated
+    def __post_init__(self) -> None:
+        self.inflated = (self.priceToBuy - self.realPrice) / self.realPrice * 100
+        self.avrMedia = (self.att + self.deff + self.ovr) // 3
 
-    def __lt__(self, other):
-        if self.inflated == other.inflated:
-            return self.avrMedia > other.avrMedia  # Ordena `avrMedia` de mayor a menor
-        return self.inflated < other.inflated       # Ordena `inflated` de menor a mayor
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Player):
+            return NotImplemented
+        return (self.inflated, self.avrMedia) == (other.inflated, other.avrMedia)
 
+    def __lt__(self, other: "Player") -> bool:
+        # Primary: lowest inflation first; secondary: highest avrMedia first
+        return (self.inflated, -self.avrMedia) < (other.inflated, -other.avrMedia)
 
-        
-    def __str__(self):
-        return (f"Nombre: {self.name}, Posición: {self.pos}, Edad: {self.age}, Club: {self.club}, "
-                f"Valoración de Ataque: {self.att}, Valoración de Defensa: {self.deff}, "
-                f"Valoración General: {self.ovr}, Precio de Compra: {self.priceToBuy}, "
-                f"Precio Real: {self.realPrice}, Inflación: {self.inflated:.2f}%")
+    def __str__(self) -> str:
+        return (
+            f"Nombre: {self.name}, Posición: {self.pos}, Edad: {self.age}, Club: {self.club}, "
+            f"Ataque: {self.att}, Defensa: {self.deff}, OVR: {self.ovr}, "
+            f"Compra: {self.priceToBuy:,}, Real: {self.realPrice:,}, Inflación: {self.inflated:.2f}%"
+        )

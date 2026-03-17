@@ -1,5 +1,5 @@
 
-PLAY_BUTTON_VIDEOS_AD_COINS = ".row.row-h-xs-150.row-h-sm-24.business-club-method-container.method-container-small.center.watchvideo-method"
+PLAY_BUTTON_VIDEOS_AD_COINS = "div.business-club-method-container[data-bind*='openWatchVideosModal']"
 
 CONTENIDO_MENSAJE_DE_ESPERA = "//p[@data-bind='html: content']"
 

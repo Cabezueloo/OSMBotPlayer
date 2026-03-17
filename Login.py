@@ -1,16 +1,18 @@
 import pickle
+from pathlib import Path
 from selenium import webdriver
 from selenium.common import exceptions
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+
+from utils import COOKIE_USER_ACCOUNT
 
 opts = Options()
 opts.add_argument("start-maximized")
 opts.add_experimental_option("excludeSwitches", ['enable-automation'])
 opts.add_experimental_option('useAutomationExtension', False)
 
-#Crear un servicio para el chromedriver
-service = Service('chromedriver.exe')
+service = Service()
 print("Esperando")
 
 driver = webdriver.Chrome(service=service, options=opts)
@@ -20,16 +22,14 @@ driver.execute_cdp_cmd('Network.setUserAgentOverride', {"userAgent": 'Mozilla/5.
                                                                      'AppleWebKit/537.36 (KHTML, like Gecko) '
                                                                      'Chrome/83.0.4103.53 Safari/537.36'})
 
-url = 'https://en.onlinesoccermanager.com/'
-
-driver.get(url)
+driver.get('https://en.onlinesoccermanager.com/')
 
 while True:
-    
     try:
         driver.get_window_size()
         if str(driver.current_url).split('/')[-1] == 'Dashboard':
-            pickle.dump(driver.get_cookies(), open("cookie.pkl", "wb"))
+            COOKIE_USER_ACCOUNT.parent.mkdir(parents=True, exist_ok=True)
+            COOKIE_USER_ACCOUNT.write_bytes(pickle.dumps(driver.get_cookies()))
             print("Completed")
             break
     except exceptions.WebDriverException:

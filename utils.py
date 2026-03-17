@@ -1,13 +1,17 @@
-CREDENTIALS_ACCOUNT_FILE: str = "userData/credentials_account_file.txt"
+"""Shared constants for the OSM bot."""
 
-COOKIE_USER_ACCOUNT: str = "userData/cookieTest.pkl"
+from pathlib import Path
 
-OPTIONS_MENU : str = "userData/options_marked.txt"
+_DATA = Path("userData")
 
-NAME_TEAM = "name_team"
-MIN_MONEY = "min_money"
-VIDEO_COINS = "video_coins"
-TRADING = "traiding"
+CREDENTIALS_ACCOUNT_FILE: Path = _DATA / "credentials_account_file.txt"
+COOKIE_USER_ACCOUNT: Path     = _DATA / "cookieTest.pkl"
+OPTIONS_MENU: Path             = _DATA / "options_marked.txt"
+REDIRECTION: Path              = Path("Redirection.txt")
+
+# Options-menu dict keys
+NAME_TEAM        = "name_team"
+MIN_MONEY        = "min_money"
+VIDEO_COINS      = "video_coins"
+TRADING          = "traiding"
 TRAINING_PLAYERS = "training_players"
-
-REDIRECTION = "Redirection.txt"

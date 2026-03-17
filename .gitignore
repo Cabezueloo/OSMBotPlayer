@@ -1,14 +1,29 @@
+# ----- IDEs -----
 /.idea
 /.vscode
-/__pycache__
+
+# ----- Python -----
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ----- Virtual environments -----
 /venv
-cookie.pkl
-getCoinsWithVideos.py
-getListOfTransfersInYourLeague.py
-knowBestBuy.py
-KnowIfAPlayerIsValidToScan.py
-toSell.py
-/envLinux
 /.venv
-/userData
+/envLinux
+
+# ----- Credentials & session data (NEVER commit these) -----
+/userData/
+cookie.pkl
+*.pkl
+
+# ----- Runtime artefacts -----
+Redirection.txt
+*.png
+
+# ----- ChromeDriver binaries -----
+chromedriver
+chromedriver.exe
+
+# ----- Legacy / scratch scripts -----
 /ignore

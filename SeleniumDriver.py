@@ -1,143 +1,123 @@
+"""Selenium driver wrapper with automatic cookie/popup handling."""
 
-import time
 import pickle
+import platform
+import random
+import time
+from pathlib import Path
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service 
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-import platform
-import os
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import random
+from selenium.webdriver.support.ui import WebDriverWait
+
+from utils import COOKIE_USER_ACCOUNT
+
+_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/83.0.4103.53 Safari/537.36"
+)
 
 
 class SeleniumDriver:
-    def __init__(self,modoVerActivado=False):
-        # Configuración de opciones de Chrome
-        self.opts = Options()
-        self.opts.add_argument("--start-maximized")
-        self.opts.add_argument('--log-level=1') # Para que no salga "Created TensorFlow"
-        self.opts.add_argument("auto-open-devtools-for-tabs")
-        
+    """Thin wrapper around a Selenium Chrome driver with OSM-specific helpers."""
 
-        if not modoVerActivado:
-            pass
-            #self.opts.add_argument("--headless")  # Ejecutar en modo headless (Segundo plano)
-            
-            
-        self.opts.add_argument("--mute-audio")  # Silenciar el audio
-        self.opts.add_experimental_option("excludeSwitches", ['enable-logging']) #Only to Chorme
-        self.opts.add_experimental_option('useAutomationExtension', False) #Only to Chorme
-        
+    def __init__(self, modoVerActivado: bool = False) -> None:
+        opts = Options()
+        for arg in ("--start-maximized", "--log-level=1", "--mute-audio"):
+            opts.add_argument(arg)
+        opts.add_experimental_option("excludeSwitches", ["enable-logging"])
+        opts.add_experimental_option("useAutomationExtension", False)
 
-        #self.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()),options=self.opts)
+        service = (
+            Service("chromedriver.exe")
+            if platform.system() == "Windows"
+            else webdriver.ChromeService()
+        )
+        self.driver = webdriver.Chrome(service=service, options=opts)
+        self.driver.execute_script(
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        )
+        self.driver.execute_cdp_cmd(
+            "Network.setUserAgentOverride", {"userAgent": _USER_AGENT}
+        )
+        self.actions = ActionChains(self.driver)
 
-        # Crear un servicio para el chromedriver
-        if platform.system()=="Windows":
-            self.service = Service('chromedriver.exe')
-            self.driver = webdriver.Chrome(service=self.service, options=self.opts)
+    # ------------------------------------------------------------------ #
+    # Navigation                                                           #
+    # ------------------------------------------------------------------ #
 
-        elif platform.system()=="Linux":
-            self.service = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')  # Ruta a chromedriver
-            self.driver = webdriver.Chrome(service=self.service, options=self.opts)
-        
-
-        # Inicializar el driver de Chrome
-        self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        self.driver.execute_cdp_cmd('Network.setUserAgentOverride', {
-            "userAgent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.53 Safari/537.36'
-        })
-    def recargar(self):
-        self.driver = webdriver.Chrome(service=self.service, options=self.opts)
-        self.load_url()
-        self.refresh_page()
-
-
-    def load_url(self, url):
-        # Entrar a la URL
-        self.driver.get(url)
+    def load_url(self, url: str) -> None:
         self.url = url
+        self.driver.get(url)
 
-    def load_cookies(self):
-        # Cargar las cookies
-        cookies = pickle.load(open("cookie.pkl", "rb"))
-        for cookie in cookies:
+    def load_cookies(self) -> None:
+        if not COOKIE_USER_ACCOUNT.exists():
+            print(f"[SeleniumDriver] Cookie file not found ({COOKIE_USER_ACCOUNT}). Run Login.py first.")
+            return
+        for cookie in pickle.loads(COOKIE_USER_ACCOUNT.read_bytes()):
             self.driver.add_cookie(cookie)
 
-    def refresh_page(self):
-        # Esperar y recargar la URL
+    def refresh_page(self) -> None:
         time.sleep(5)
         self.driver.get(self.url)
         time.sleep(6)
+        self._dismiss_popups()
 
-        #Check if a OSM ask personal data
-        try:
-            btn = self.driver.find_element(By.XPATH, "//button[contains(@class, 'fc-button fc-cta-consent fc-primary-button')]/p")
-      
-            btn.click()
-            time.sleep(2)
-        except:
-            pass
-        
-        #Check if a pop-up show
-        try:
-            span_element = WebDriverWait(self.driver, 3).until(
-                EC.presence_of_element_located((By.XPATH, "//div[@id='modal-dialog-centerpopup']//button[@class='close']/span"))
-            )
-            
-            span_element.click()
-        except Exception:
-            pass
-        
-        try:
-            #Check if a modal-dialog-skillratingupdate
-            modal = self.driver.find_element(By.ID, "modal-dialog-skillratingupdate")
-            
-            # Verifica si el modal es visible
-            if modal.is_displayed():
-                # Obtiene la posición y dimensiones del modal
-                modal_location = modal.location
-                modal_size = modal.size
-                modal_left = modal_location['x']
-                modal_top = modal_location['y']
-                modal_right = modal_left + modal_size['width']
-                modal_bottom = modal_top + modal_size['height']
-                
-                # Genera una posición aleatoria fuera del modal
-                window_width = self.driver.execute_script("return window.innerWidth")
-                window_height = self.driver.execute_script("return window.innerHeight")
-
-                # Asegurarse de que el clic sea fuera de los límites del modal
-                while True:
-                    random_x = self.driver.randint(0, window_width)
-                    random_y = random.randint(0, window_height)
-                    
-                    if not (modal_left <= random_x <= modal_right and modal_top <= random_y <= modal_bottom):
-                        break
-
-                # Simula un clic en la posición aleatoria fuera del modal
-                
-                self.actions.move_by_offset(random_x, random_y).click().perform()
-                print("Modal cerrado con clic en posición aleatoria fuera del modal:", (random_x, random_y))
-        except Exception:
-            pass
-            #print(f"modal dialog skillratingupdate no encontrado")
-
-    def close(self):
-        self.driver.quit()
-        
-        
-
-    
-    def actions(self):
-        self.actions = ActionChains(self.driver)
-    
-
-    def create(self, url):
-        self.load_url(url=url)
+    def create(self, url: str) -> None:
+        self.load_url(url)
         self.load_cookies()
         self.refresh_page()
-        self.actions()
-        
+
+    def close(self) -> None:
+        self.driver.quit()
+
+    # ------------------------------------------------------------------ #
+    # Internal popup-dismissal helpers                                     #
+    # ------------------------------------------------------------------ #
+
+    def _dismiss_popups(self) -> None:
+        """Silently dismiss every known OSM overlay in one pass."""
+        self._try_click(By.XPATH, "//button[contains(@class,'fc-cta-consent')]/p")
+        self._try_wait_click(By.XPATH, "//div[@id='modal-dialog-centerpopup']//button[@class='close']/span")
+        self._dismiss_skill_update_modal()
+
+    def _try_click(self, by: str, locator: str) -> None:
+        try:
+            self.driver.find_element(by, locator).click()
+        except Exception:
+            pass
+
+    def _try_wait_click(self, by: str, locator: str, timeout: int = 3) -> None:
+        try:
+            WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_element_located((by, locator))
+            ).click()
+        except Exception:
+            pass
+
+    def _dismiss_skill_update_modal(self) -> None:
+        try:
+            modal = self.driver.find_element(By.ID, "modal-dialog-skillratingupdate")
+            if not modal.is_displayed():
+                return
+            loc  = modal.location
+            size = modal.size
+            w    = self.driver.execute_script("return window.innerWidth")
+            h    = self.driver.execute_script("return window.innerHeight")
+
+            # Pick a random point guaranteed to be outside the modal bounds
+            x, y = next(
+                (rx, ry)
+                for rx in (random.randint(0, w),)
+                for ry in (random.randint(0, h),)
+                if not (loc["x"] <= rx <= loc["x"] + size["width"]
+                        and loc["y"] <= ry <= loc["y"] + size["height"])
+            )
+            self.actions.move_by_offset(x, y).click().perform()
+        except Exception:
+            pass
