@@ -30,6 +30,11 @@ class SeleniumDriver:
         opts = Options()
         for arg in ("--start-maximized", "--log-level=1", "--mute-audio"):
             opts.add_argument(arg)
+        if not modoVerActivado:
+            opts.add_argument("--headless=new")
+            opts.add_argument("--disable-gpu")
+            opts.add_argument("--window-size=1920,1080")
+            
         opts.add_experimental_option("excludeSwitches", ["enable-logging"])
         opts.add_experimental_option("useAutomationExtension", False)
 

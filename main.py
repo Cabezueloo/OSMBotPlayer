@@ -16,6 +16,7 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     TimeoutException,
     WebDriverException,
+    StaleElementReferenceException,
 )
 
 from Player import Player
@@ -148,9 +149,19 @@ def _build_player_from_row(driver, actions, cells, budget: int, own_team: str) -
 def _wait_for_video_end(driver, color: str) -> bool:
     """Wait until #videoad is hidden; reload if stuck > 2 min. Returns True if a video played."""
     time.sleep(5)
-    video_ad = driver.find_element(By.ID, "videoad")
+    try:
+        video_ad = driver.find_element(By.ID, "videoad")
+    except NoSuchElementException:
+        return False
+
     elapsed = 0
-    while video_ad.is_displayed():
+    while True:
+        try:
+            if not video_ad.is_displayed():
+                break
+        except (StaleElementReferenceException, NoSuchElementException):
+            break
+
         tlog("El video no ha terminado")
         time.sleep(15)
         elapsed += 15
@@ -158,6 +169,7 @@ def _wait_for_video_end(driver, color: str) -> bool:
             tlog("El video se ha atascado por más de 2 minutos. Recargando página...")
             driver.refresh()
             return False
+
     return elapsed > 0  # True if video actually played
 
 
@@ -204,7 +216,7 @@ def thread_getCoinsWithVideos() -> None:
 def thread_knowBestBuy(
     min_budget: int = 5_000_000,
     own_team: str = "Inter Milan",
-    max_inflation: float = 35.0,   # % — skip players more expensive than this vs real value
+    max_inflation: float = 36.0,   # % — skip players more expensive than this vs real value
 ) -> None:
     """Scan the transfer list, buy undervalued players, then list them for sale (Thread 2)."""
     sd = SeleniumDriver()
@@ -271,17 +283,29 @@ def thread_knowBestBuy(
 
 def _purchase_players(driver, sd: SeleniumDriver, names: list[str]) -> None:
     buy_xpath = (
-        "//div[starts-with(@id,'modal-dialog-')]"
-        "//button[contains(@class,'btn-new') and contains(@class,'btn-success') and contains(@data-bind,'click: buy')]"
+        "//button[contains(@data-bind,'click: buy') and contains(@class, 'btn-success')]"
     )
     for name in names:
         time.sleep(2)
         row = driver.find_element(By.XPATH, f"//table[contains(@class,'table table-sticky thSortable')]//td[.//span[text()='{name}']]")
         sd.actions.move_to_element(row).click().perform()
         time.sleep(5)
-        btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, buy_xpath)))
-        driver.execute_script("arguments[0].scrollIntoView(true);", btn)
-        time.sleep(5)
+        btn = None
+        for _ in range(20):
+            btns = driver.find_elements(By.XPATH, buy_xpath)
+            for b in btns:
+                if b.is_displayed() and b.is_enabled():
+                    btn = b
+                    break
+            if btn:
+                break
+            time.sleep(0.5)
+
+        if not btn:
+            raise TimeoutException("No se encontró el botón de compra visible.")
+
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
+        time.sleep(1)
         btn.click()
         tlog(f"Comprado: {name}")
         time.sleep(3)
@@ -301,7 +325,7 @@ def thread_sellPlayer(players_to_sell: list[str]) -> None:
     sell_buttons = driver.find_elements(
         By.XPATH,
         "//div[contains(@class,'sell-player-slot-container')]"
-        "//button[contains(@class,'btn-new') and contains(@data-bind,'showSelectSellPlayerModal')]",
+        "//button[contains(@data-bind,'showSelectSellPlayerModal')]",
     )
 
     for btn, name in zip(sell_buttons, players_to_sell):
@@ -310,15 +334,17 @@ def thread_sellPlayer(players_to_sell: list[str]) -> None:
         time.sleep(3)
         driver.find_element(By.XPATH, f"//td[.//span[text()='{name}']]").click()
 
-        slider = WebDriverWait(driver, 4).until(
-            EC.element_to_be_clickable((By.CLASS_NAME, "slider-handle.min-slider-handle.round"))
+        slider = WebDriverWait(driver, 6).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".slider-handle.min-slider-handle"))
         )
         time.sleep(1)
         sd.actions.click_and_hold(slider).move_by_offset(400, 0).release().perform()
 
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, BOTON_CONFIRMAR_PONER_A_LA_VENTA))
-        ).click()
+        confirm_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//a[contains(@data-bind,'click: sell')]"))
+        )
+        time.sleep(1)
+        confirm_btn.click()
 
         tlog(f"Jugador {name} puesto en venta")
         time.sleep(3)
@@ -327,6 +353,25 @@ def thread_sellPlayer(players_to_sell: list[str]) -> None:
 # ---------------------------------------------------------------------------
 # Thread: training
 # ---------------------------------------------------------------------------
+
+def _get_training_seconds_remaining(driver) -> int:
+    """Return seconds left on the active training timer (h1.timer), or 0 if not visible."""
+    try:
+        el = driver.find_element(
+            By.CSS_SELECTOR,
+            'h1.timer[data-bind*="secondsRemaining"]',
+        )
+        if not el.is_displayed():
+            return 0
+        text = el.text.strip()  # e.g. '01h 25m 59s'
+        days = int(re.search(r"(\d+)d", text).group(1)) if "d" in text else 0
+        hrs  = int(re.search(r"(\d+)h", text).group(1)) if "h" in text else 0
+        mnt  = int(re.search(r"(\d+)m", text).group(1)) if "m" in text else 0
+        sec  = int(re.search(r"(\d+)s", text).group(1)) if "s" in text else 0
+        return days * 86_400 + hrs * 3_600 + mnt * 60 + sec
+    except Exception:
+        return 0
+
 
 def thread_trainingPlayers() -> None:
     """Manage player training and watch training ads (Thread 4)."""
@@ -344,8 +389,18 @@ def thread_trainingPlayers() -> None:
                 if not video_played:
                     try:
                         text = driver.find_element(By.XPATH, CONTENIDO_MENSAJE_DE_ESPERA)
-                        sleep_s = _parse_wait_time(text, driver)
-                        tlog(f"Esperando {sleep_s // 60} min. Hora: {datetime.now():%H:%M:%S}")
+                        cooldown_s = _parse_wait_time(text, driver)
+                        training_s = _get_training_seconds_remaining(driver)
+                        if training_s > 0 and training_s < cooldown_s:
+                            sleep_s = training_s
+                            tlog(
+                                f"Entrenamiento termina antes ({training_s // 60}m) "
+                                f"que el cooldown ({cooldown_s // 60}m) — "
+                                f"esperando hasta fin de entrenamiento. Hora: {datetime.now():%H:%M:%S}"
+                            )
+                        else:
+                            sleep_s = cooldown_s
+                            tlog(f"Esperando {sleep_s // 60} min. Hora: {datetime.now():%H:%M:%S}")
                         time.sleep(sleep_s)
                         sd.refresh_page()
                     except Exception:
@@ -365,14 +420,19 @@ def _complete_and_assign_training(driver) -> None:
         tlog("Botón de entrenamiento completado pulsado")
     time.sleep(15)
 
-    # Assign new training only when > 7 h before next match
-    now   = datetime.now()
-    match = now.replace(hour=20, minute=20, second=0, microsecond=0)
-    while match <= now:
-        match += timedelta(days=1)
-    delta      = match - now
-    hours, rem = divmod(int(delta.total_seconds()), 3600)
-    minutes    = rem // 60
+    try:
+        timer_span = driver.find_element(By.CSS_SELECTOR, 'span[data-bind="time: secondsRemaining"]')
+        text = timer_span.get_attribute("textContent").strip()
+        # Expected format: '02d 07h 25m 29s' or '07h 25m 29s'
+        days = int(re.search(r"(\d+)d", text).group(1)) if "d" in text else 0
+        hrs = int(re.search(r"(\d+)h", text).group(1)) if "h" in text else 0
+        mnt = int(re.search(r"(\d+)m", text).group(1)) if "m" in text else 0
+        hours = (days * 24) + hrs
+        minutes = mnt
+    except Exception as e:
+        tlog(f"Aviso: No se pudo leer el tiempo restante real ({e}). Asumiendo 8h+")
+        hours = 8
+        minutes = 0
     tlog(f"Tiempo hasta el partido: {hours}h {minutes}m")
 
     add_buttons = driver.find_elements(By.XPATH, BOTON_START_PONER_JUGADOR_A_ENTRENAR)
@@ -392,8 +452,8 @@ def _complete_and_assign_training(driver) -> None:
                 except Exception:
                     print("Modal de confirmación no presente.")
         case _ if len(add_buttons) == 4:
-            wait_s = int(delta.total_seconds()) + 1_800  # +30 min buffer
-            tlog("Pausado — sin entrenamientos activos")
+            wait_s = (hours * 3600) + (minutes * 60) + 1_800  # sleep until match + 30 min buffer
+            tlog(f"Pausado — sin entrenamientos activos. Esperando {hours}h {minutes}m")
             time.sleep(wait_s)
         case _:
             tlog("Diferencia < 7h — no se añaden jugadores")
@@ -405,18 +465,23 @@ def _complete_and_assign_training(driver) -> None:
 
 def _parse_wait_time(text_elem, driver) -> int:
     """Read the OSM 'come back in X' message and return seconds to sleep."""
-    html = text_elem.get_attribute("innerHTML")
+    html = text_elem.get_attribute("innerHTML").lower()
     tlog(html)
 
-    match html:
-        case s if "few seconds" in s or "minute" in s:
-            seconds = 120
-        case s if "an hour" in s:
-            seconds = 300
-        case s if "hours" in s:
-            seconds = 3_600
-        case _:
-            seconds = int(re.findall(r"\d+", html)[0]) * 60
+    digits = re.findall(r"\d+", html)
+    val = int(digits[0]) if digits else 0
+
+    if "second" in html:
+        seconds = val if val > 0 else 120
+    elif "minute" in html:
+        seconds = (val * 60) if val > 0 else 120
+    elif "an hour" in html:
+        seconds = 3600
+    elif "hour" in html:
+        seconds = (val * 3600) if val > 0 else 3600
+    else:
+        tlog("No se reconoció el formato de tiempo. Asumiendo 10 min.")
+        seconds = 600
 
     try:
         driver.find_element(
@@ -436,10 +501,10 @@ def _parse_wait_time(text_elem, driver) -> int:
 if __name__ == "__main__":
     args = sys.argv[1:]
     own_team  = args[0]       if len(args) > 0 else "Inter Milan"
-    min_money = int(args[1])  if len(args) > 1 else 10_000_000
-    do_coins  = eval(args[2]) if len(args) > 2 else False
+    min_money = int(args[1])  if len(args) > 1 else 25_000_000
+    do_coins  = eval(args[2]) if len(args) > 2 else True
     do_trade  = eval(args[3]) if len(args) > 3 else True
-    do_train  = eval(args[4]) if len(args) > 4 else False
+    do_train  = eval(args[4]) if len(args) > 4 else True
 
     # List of tuples — a dict keyed on bool would silently merge entries
     thread_defs = [
