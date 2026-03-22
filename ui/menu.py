@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """PyQt5 front-end for the OSM bot — parameter configuration and thread management."""
 
 import json
@@ -19,8 +18,10 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from main import thread_getCoinsWithVideos, thread_knowBestBuy, thread_trainingPlayers
-from utils import (
+from bot.videos import thread_getCoinsWithVideos
+from bot.trading import thread_knowBestBuy
+from bot.training import thread_trainingPlayers
+from core.config import (
     COOKIE_USER_ACCOUNT,
     CREDENTIALS_ACCOUNT_FILE,
     MIN_MONEY,
@@ -33,10 +34,10 @@ from utils import (
 )
 
 _THREAD_DEFS = [
-    # (attr_name,            thread_name, target,                     extra_args_fn)
-    ("checkbox_video_monedas",  "Hilo 1", thread_getCoinsWithVideos,  lambda s: ()),
-    ("checkbox_compra_venta",   "Hilo 2", thread_knowBestBuy,         lambda s: (int(s.millonesCompraVenta.text()), s.nombreEquipo.text())),
-    ("checkbox_control_jugadores", "Hilo 4", thread_trainingPlayers,  lambda s: ()),
+    # (attr_name,                thread_name, target,                    extra_args_fn)
+    ("checkbox_video_monedas",   "Hilo 1", thread_getCoinsWithVideos,  lambda s: ()),
+    ("checkbox_compra_venta",    "Hilo 2", thread_knowBestBuy,         lambda s: (int(s.millonesCompraVenta.text()), s.nombreEquipo.text())),
+    ("checkbox_control_jugadores", "Hilo 4", thread_trainingPlayers,   lambda s: ()),
 ]
 
 
@@ -92,7 +93,7 @@ class Menu(QWidget):
             self._restore_last_options()
 
     # ------------------------------------------------------------------ #
-    # Options persistence (JSON instead of eval-on-a-string)             #
+    # Options persistence                                                  #
     # ------------------------------------------------------------------ #
 
     def _restore_last_options(self) -> None:
